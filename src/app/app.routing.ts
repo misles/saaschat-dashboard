@@ -205,7 +205,13 @@ const routes: Routes = [
 
 
   { path: 'verify/email/:user_id/:code', component: VerifyEmailComponent },
-
+ 
+  // this for livekit call features
+  {
+    path: 'project/:projectid/settings/call-features',
+    loadChildren: () => import('./call-features/call-features.module').then(m => m.CallFeaturesModule),
+    canActivate: [AuthGuard]
+  },
 
   // CHANGE PSWRD if project is defined (use case: THE USER SELECTED A PROJECT)
   {

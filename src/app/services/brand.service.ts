@@ -49,7 +49,7 @@ export class BrandService {
       // "widget_launcher_button_placeholder": "assets/img/logos/custom-launcher-button-placeholder_v2.svg",
       "footer": {
         "display_terms_and_conditions_link": true,
-        "display_star_us_on_github": true,
+     //   "display_star_us_on_github": true,
         "display_leave_us_a_feedback": true,
         "display_followus_on_x": true,
         "followus_on_x_URL": "",

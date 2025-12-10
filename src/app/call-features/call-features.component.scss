@@ -1,0 +1,197 @@
+.call-features-container {
+  padding: 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.call-features-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 32px;
+  gap: 16px;
+
+  h1 {
+    margin: 0;
+    flex: 1;
+    font-size: 28px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  .back-button {
+    margin-right: 8px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .sync-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+
+  p {
+    margin-top: 16px;
+    color: #666;
+  }
+}
+
+.call-features-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.info-card {
+  background-color: #f8f9fa;
+  border-left: 4px solid #2196f3;
+
+  .status-info {
+    p {
+      margin: 8px 0;
+      color: #555;
+
+      strong {
+        color: #333;
+        margin-right: 8px;
+      }
+    }
+  }
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+mat-card {
+  padding: 24px;
+
+  mat-card-header {
+    padding: 0;
+    margin-bottom: 24px;
+
+    mat-card-title {
+      font-size: 20px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    mat-card-subtitle {
+      color: #666;
+    }
+  }
+
+  mat-card-content {
+    padding: 0;
+  }
+}
+
+.feature-toggle {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  mat-slide-toggle {
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .feature-description {
+    margin: 4px 0 0 40px;
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.limit-setting {
+  margin-bottom: 24px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .full-width {
+    width: 100%;
+  }
+
+  .setting-description {
+    margin: 8px 0 0;
+    color: #666;
+    font-size: 14px;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 24px 0;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 16px;
+
+  .save-button, .cancel-button {
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  .call-features-container {
+    padding: 16px;
+  }
+
+  .call-features-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+
+  .action-buttons {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// Snackbar styles
+::ng-deep {
+  .success-snackbar {
+    background-color: #4caf50;
+    color: white;
+  }
+
+  .error-snackbar {
+    background-color: #f44336;
+    color: white;
+  }
+}

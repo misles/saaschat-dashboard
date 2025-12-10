@@ -1,0 +1,140 @@
+<div class="call-features-container">
+  <!-- Header -->
+  <div class="call-features-header">
+    <button mat-icon-button (click)="goBack()" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Call Features Settings</h1>
+    <div class="header-actions">
+      <button mat-button (click)="syncCallFeatures()" [disabled]="isSyncing" class="sync-button">
+        <mat-icon *ngIf="!isSyncing">sync</mat-icon>
+        <mat-spinner diameter="20" *ngIf="isSyncing"></mat-spinner>
+        {{ isSyncing ? 'Syncing...' : 'Sync Now' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>Loading call features...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="call-features-content">
+    <!-- Info Card -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>Video & Audio Calling Features</mat-card-title>
+        <mat-card-subtitle>
+          Configure call capabilities for your workspace
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="status-info">
+          <p><strong>Plan:</strong> {{ plan | titlecase }}</p>
+          <p><strong>Source:</strong> {{ source }}</p>
+          <p *ngIf="lastSyncTime"><strong>Last Synced:</strong> {{ lastSyncTime | date:'medium' }}</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Settings Form -->
+    <form [formGroup]="callFeaturesForm" (ngSubmit)="saveCallFeatures()" class="settings-form">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Basic Features</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="feature-toggle">
+            <mat-slide-toggle formControlName="audio" color="primary">
+              Audio Calls
+            </mat-slide-toggle>
+            <p class="feature-description">Enable audio calling capabilities</p>
+          </div>
+
+          <div class="feature-toggle">
+            <mat-slide-toggle formControlName="video" color="primary">
+              Video Calls
+            </mat-slide-toggle>
+            <p class="feature-description">Enable video calling capabilities</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Advanced Features</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="feature-toggle">
+            <mat-slide-toggle formControlName="screen_share" color="primary">
+              Screen Sharing
+            </mat-slide-toggle>
+            <p class="feature-description">Allow participants to share their screen</p>
+          </div>
+
+          <div class="feature-toggle">
+            <mat-slide-toggle formControlName="image_share" color="primary">
+              Image Sharing
+            </mat-slide-toggle>
+            <p class="feature-description">Allow participants to share images during calls</p>
+          </div>
+
+          <div class="feature-toggle">
+            <mat-slide-toggle formControlName="file_share" color="primary">
+              File Sharing
+            </mat-slide-toggle>
+            <p class="feature-description">Allow participants to share files during calls</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Limits</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="limit-setting">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Maximum Participants</mat-label>
+              <input matInput type="number" formControlName="max_participants" min="1" max="50">
+              <mat-error *ngIf="max_participants?.invalid">
+                Please enter a number between 1 and 50
+              </mat-error>
+            </mat-form-field>
+            <p class="setting-description">Maximum number of participants allowed in a call</p>
+          </div>
+
+          <div class="limit-setting">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Maximum Call Duration (minutes)</mat-label>
+              <input matInput type="number" formControlName="max_call_minutes" min="0" max="1440">
+              <mat-hint>0 = unlimited</mat-hint>
+              <mat-error *ngIf="max_call_minutes?.invalid">
+                Please enter a number between 0 and 1440
+              </mat-error>
+            </mat-form-field>
+            <p class="setting-description">Maximum duration for calls in minutes (0 for unlimited)</p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button mat-button type="button" (click)="goBack()" class="cancel-button">
+          Cancel
+        </button>
+        <button mat-raised-button 
+                color="primary" 
+                type="submit" 
+                [disabled]="callFeaturesForm.invalid || isSaving"
+                class="save-button">
+          <mat-icon *ngIf="!isSaving">save</mat-icon>
+          <mat-spinner diameter="20" *ngIf="isSaving"></mat-spinner>
+          {{ isSaving ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
