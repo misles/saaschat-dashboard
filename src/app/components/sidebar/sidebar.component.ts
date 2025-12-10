@@ -163,7 +163,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
 
   availabilityCount: number;
   _route: string;
-
+  CALL_FEATURES_ROUTE_IS_ACTIVE = false; //To manage the call features menu item active state
   ACTIVITIES_ROUTE_IS_ACTIVE: boolean;
   ACTIVITIES_DEMO_ROUTE_IS_ACTIVE: boolean;
   ANALYTICS_DEMO_ROUTE_IS_ACTIVE: boolean;
@@ -352,7 +352,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     this.getNotificationSoundPreferences();
     this.getWsCurrentUserAvailability$();
     // this.getProjectPlan()
-
+    this.checkIfCallFeaturesRouteIsActive(); // to manage the call features menu item active state
     // this.listenToKbVersion()
 
     // document.documentElement.style.setProperty('--sidebar-active-icon', this.company_brand_color);
@@ -1868,8 +1868,15 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       }, () => {
         this.logger.log('[SIDEBAR] - GET WS CURRENT-USER IS BUSY *** complete *** ')
       });
+      
 
+  }
 
+  // CHECK IF CALL FEATURES ROUTE IS ACTIVE
+  checkIfCallFeaturesRouteIsActive() {
+    if (this.router.url.includes('/settings/call-features')) {
+      this.CALL_FEATURES_ROUTE_IS_ACTIVE = true;
+    }
   }
 
   // No more used  
@@ -2114,6 +2121,15 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     this.logger.log('[SIDEBAR] IS MOBILE project AFTER GOTO PROJECTS ', this.project)
   }
 
+// GO TO CALL FEATURES PAGE
+  goToCallFeatures() {
+    if (this.project && this.project._id) {
+      this.router.navigate(['project/' + this.project._id + '/settings/call-features']);
+      this.CALL_FEATURES_ROUTE_IS_ACTIVE = true;
+      // Reset other active states
+      this.resetOtherActiveStatesExcept('CALL_FEATURES_ROUTE_IS_ACTIVE');
+    }
+  }
   has_clicked_settings(SHOW_SETTINGS_SUBMENU: boolean) {
     this.SHOW_SETTINGS_SUBMENU = SHOW_SETTINGS_SUBMENU;
     this.logger.log('[SIDEBAR] HAS CLICKED SETTINGS - SHOW_SETTINGS_SUBMENU ', this.SHOW_SETTINGS_SUBMENU);
