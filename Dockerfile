@@ -14,6 +14,9 @@ RUN npm ci --legacy-peer-deps
 # 4. Copy app source
 COPY . .
 
+# 5. Build with correct path
+RUN npm run build
+
 ## Build the angular app in production mode and store the artifacts in dist folder
 
 #RUN npm run ng build -- --output-path=dist --base-href ./
