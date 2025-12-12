@@ -1,16 +1,17 @@
 ### STAGE 1: Build ###
 
-# We label our stage as ‘builder’
 FROM node:14-alpine as builder
 
+# 1. Set working directory FIRST
+WORKDIR /app
+
+# 2. Copy package files
 COPY package.json package-lock.json ./
 
-## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
+# 3. Install with --legacy-peer-deps to match your local fix
+RUN npm ci --legacy-peer-deps
 
-RUN npm ci && mkdir /ng-app && mv ./node_modules ./ng-app
-
-WORKDIR /ng-app
-
+# 4. Copy app source
 COPY . .
 
 ## Build the angular app in production mode and store the artifacts in dist folder
