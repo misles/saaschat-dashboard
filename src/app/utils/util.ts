@@ -875,6 +875,7 @@ export const DEEPSEEK_MODEL: Array<{ name: string, value: string, description:st
 ]
 
 export var OPENAI_MODEL: Array<{ name: string, value: string, description:string, status: "active" | "inactive", additionalText?: string}> = [
+  { name: "Gpt-5.2",              value: "gpt-5.2",               description: "TYPE_GPT_MODEL.deepseek-chat.description",       status: "active"    },  
   { name: "Gpt-5.1",              value: "gpt-5.1",               description: "TYPE_GPT_MODEL.deepseek-chat.description",       status: "active"    },
   { name: "Gpt-5",                value: "gpt-5",                 description: "TYPE_GPT_MODEL.deepseek-chat.description",         status: "active"    },
   { name: "Gpt-5-mini",           value: "gpt-5-mini",            description: "TYPE_GPT_MODEL.deepseek-chat.description",         status: "active"    },
@@ -1184,4 +1185,5 @@ export const URL_contents_sources_doc = 'https://gethelp.tiledesk.com/articles/a
 // export const URL_kb = 'https://gethelp.tiledesk.com/categories/knowledge-base/'
 export const URL_kb = 'https://guide.tiledesk.com/ai-chatbots-and-automation/knowledge-base/knowledge-base-overview'
 export const URL_WA_BroadcastsDocs = 'https://guide.tiledesk.com/apps-and-integrations/whatsapp-business/how-create-whatsapp-broadcasts';
+export const URL_WA_Send_Message = 'https://guide.tiledesk.com/apps-and-integrations/whatsapp-business/how-to-send-whatsapp-messages-to-contacts';
 
