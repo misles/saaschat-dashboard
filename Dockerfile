@@ -1,5 +1,4 @@
 ### STAGE 1: Build ###
-FROM node:14-alpine as builder
 
 # 1. Copy package files
 COPY package.json package-lock.json ./
@@ -20,6 +19,7 @@ COPY . .
 RUN npm run ng build -- --configuration production --output-path=dist --base-href ./
 
 ### STAGE 2: Setup ###
+
 FROM nginx:1.14.1-alpine
 
 COPY nginx.conf /etc/nginx/nginx.conf
