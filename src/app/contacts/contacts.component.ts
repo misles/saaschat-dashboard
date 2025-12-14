@@ -7,12 +7,16 @@ import { Contact } from '../models/contact-model';
 import { Router } from '@angular/router';
 import { AuthService } from '../core/auth.service';
 import { NotifyService } from '../core/notify.service';
-import { APP_SUMO_PLAN_NAME, avatarPlaceholder, getColorBck, isValidEmail, PLAN_NAME } from '../utils/util';
+import { APP_SUMO_PLAN_NAME, avatarPlaceholder, getColorBck, isValidEmail, PLAN_NAME, URL_WA_Send_Message } from '../utils/util';
 import { UsersService } from '../services/users.service';
 import { TranslateService } from '@ngx-translate/core';
 import { ProjectPlanService } from '../services/project-plan.service';
 import { Subscription } from 'rxjs';
 import { LoggerService } from '../services/logger/logger.service';
+import { ContactsWaBroadcastModalComponent } from './contacts-wa-broadcast-modal/contacts-wa-broadcast-modal.component';
+import { MatDialog } from '@angular/material/dialog';
+import { AddNewContactModalComponent } from './add-new-contact-modal/add-new-contact-modal.component';
+import { BrandService } from 'app/services/brand.service';
 declare const $: any;
 // const swal = require('sweetalert');
 const Swal = require('sweetalert2')
@@ -120,6 +124,8 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
   emailArray = [];
   HAS_SEARCHED: boolean = false
   fullTextIsAValidEmail: boolean = false;
+  public hideHelpLink: boolean;
+
   constructor(
     private contactsService: ContactsService,
     private router: Router,
@@ -129,8 +135,13 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
     private translate: TranslateService,
     private prjctPlanService: ProjectPlanService,
     private appConfigService: AppConfigService,
-    private logger: LoggerService
-  ) { }
+    private logger: LoggerService,
+    public dialog: MatDialog,
+    public brandService: BrandService
+  ) { 
+    const brand = brandService.getBrand();
+    this.hideHelpLink = brand['DOCS'];
+  }
 
   ngOnInit() {
     this.getTranslation();
@@ -158,6 +169,7 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
       "hide.bs.dropdown": function () { return this.closable; }
     });
     this.getBrowserVersion();
+    
   }
 
   getBrowserVersion() {
@@ -167,6 +179,23 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
 
+   presentDialogWABroadcast(contact) {
+      this.logger.log('[CONTACTS-COMP] openDialog presentDialogWABroadcast chatbot ', contact)
+      const dialogRef = this.dialog.open(ContactsWaBroadcastModalComponent, {
+        backdropClass: 'cdk-overlay-transparent-backdrop',
+        hasBackdrop: true,
+        width: '800px',
+        data: {
+          contact: contact,
+          projectId: this.projectId
+        },
+      });
+  
+      dialogRef.afterClosed().subscribe(res => {
+        
+        
+      });
+    }
 
   getOSCODE() {
     this.public_Key = this.appConfigService.getConfig().t2y12PruGU9wUtEGzBJfolMIgK;
@@ -780,7 +809,7 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
         // TODO: When a batch call is available to retrieve isAuthenticated for all contacts
         // in a single HTTP request, uncomment the following lines:
         // contact.contact_is_verified = this.CONTACT_IS_VERIFIED
-        // this.getProjectUserById(contact, leadid)
+        this.getProjectUserById(contact, leadid)
         contact.contact_is_verified = false;
         
       }
@@ -831,16 +860,16 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
   getProjectUserById(contact, leadid) {
     // COMMENTED: Too many HTTP calls just to get isAuthenticated
     // Uncomment when a batch solution or lazy loading is available
-    // this.usersService.getProjectUserById(leadid).subscribe((projectUser: any) => {
-    //   this.logger.log('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID RES  ', projectUser);
-    //   contact.contact_is_verified = projectUser[0]['isAuthenticated']
-    // },
-    //   (error) => {
-    //     this.logger.error('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID ERR  ', error);
-    //   },
-    //   () => {
-    //     this.logger.log('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID * COMPLETE *');
-    //   });
+    this.usersService.getProjectUserById(leadid).subscribe((projectUser: any) => {
+      this.logger.log('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID RES  ', projectUser);
+      contact.contact_is_verified = projectUser[0]['isAuthenticated']
+    },
+      (error) => {
+        this.logger.error('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID ERR  ', error);
+      },
+      () => {
+        this.logger.log('[CONTACTS-COMP] - GET PROJECT USER BY LEAD ID * COMPLETE *');
+      });
   }
 
   // --------------------------------------------------
@@ -1151,6 +1180,53 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
   }
 
+  presentDialogAddContact() {
+    const dialogRef = this.dialog.open(AddNewContactModalComponent, {
+        backdropClass: 'cdk-overlay-transparent-backdrop',
+        hasBackdrop: true,
+        width: '600px',
+        data: {
+          projectId: this.projectId
+        },
+      });
+  
+      dialogRef.afterClosed().subscribe(res => {
+        if (res) {
+          // Il contatto è stato creato con successo, aggiungilo alla lista
+          this.logger.log('[CONTACTS-COMP] - ADD-NEW-CONTACT - CONTACT CREATED ', res);
+          
+          // Aggiungi il contatto all'inizio della lista
+          if (!this.contacts) {
+            this.contacts = [];
+          }
+          
+          // Formatta il contatto come gli altri nella lista
+          const newContact: Contact = {
+            _id: res._id,
+            lead_id: res.lead_id,
+            fullname: res.fullname,
+            email: res.email || null,
+            tags: res.tags || [],
+            __v: res.__v || 0
+          };
+          
+          // Verifica se l'email è valida
+          if (newContact.email && !isValidEmail(newContact.email)) {
+            newContact.email = null;
+          }
+          
+          // Aggiungi il contatto all'inizio della lista
+          this.contacts.unshift(newContact);
+          
+          // Genera l'avatar per il nuovo contatto
+          this.generateAvatarFromNameAndGetIfContactIsAuthenticated([newContact]);
+          
+          // Aggiorna il conteggio dei contatti attivi
+          this.getActiveContactsCount();
+        }
+      });
+
+  }
 
   exportContactsToCsv() {
     if (!this.overridePay) {
@@ -1342,6 +1418,12 @@ export class ContactsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   goToVisitors() {
     this.router.navigate(['project/' + this.projectId + '/visitors']);
+  }
+
+
+  goToSendWAMessageDoc() {
+    const url = URL_WA_Send_Message;
+    window.open(url, '_blank');
   }
 
 

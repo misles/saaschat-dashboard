@@ -84,6 +84,20 @@ export class AutomationsService {
     return this.httpClient.get(url, httpOptions);
   }
 
+  getWASettings() {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': this.TOKEN
+      })
+    }
+
+    const url = this.SERVER_BASE_PATH  + "modules/whatsapp/api/"  + this.project_id;
+    this.logger.debug('[AUTOMATIONS.SERVICE] - get WA settings url ' + url);
+
+    return this.httpClient.get(url, httpOptions);
+  }
+
   getWATemplates() {
     const httpOptions = {
       headers: new HttpHeaders({
@@ -113,6 +127,37 @@ export class AutomationsService {
 
     return this.httpClient
       .post(url, formData, options)
+  }
+
+  public sendBroadcast(broadcastData: any) {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': this.TOKEN
+      })
+    };
+
+    broadcastData.broadcast = false
+
+    const url = this.SERVER_BASE_PATH + "modules/whatsapp/api/tiledesk/broadcast";
+    this.logger.log('[AUTOMATIONS.SERVICE] - SEND BROADCAST - URL ', url);
+    this.logger.log('[AUTOMATIONS.SERVICE] - SEND BROADCAST - DATA ', broadcastData);
+
+    return this.httpClient.post(url, JSON.stringify(broadcastData), httpOptions);
+  }
+
+  getWAMessagesByPhoneNum(phoneNum) {
+    const httpOptions = {
+      headers: new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': this.TOKEN
+      })
+    }
+
+    const url = this.SERVER_BASE_PATH   + this.project_id + '/logs/whatsapp/user/' + phoneNum;
+    this.logger.debug('[AUTOMATIONS.SERVICE] - get WA Messages url ' + url);
+
+    return this.httpClient.get(url, httpOptions);
   }
 
 }

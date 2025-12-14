@@ -23,6 +23,10 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   @ViewChild('systemContext') systemContext: SatPopover;
   @ViewChild('advancedContext') advancedContext: SatPopover;
   @ViewChild('contentsSources') contentsSources: SatPopover;
+  @ViewChild('chunkonly') chunkonly: SatPopover;
+  @ViewChild('rerank') rerank: SatPopover;
+  
+  private savedScrollData: { scrollTop: number, selector: string, activeElementId?: string } | null = null;
 
 
 
@@ -52,6 +56,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   public topK: number;
   public context: string
   public context_placeholder: string
+  public chunkOnly: boolean
+  public reRanking: boolean
   public advancedPrompt: boolean // = false;
   public citations: boolean // = false;
   wasOpenedFromThePreviewKBModal: boolean
@@ -65,6 +71,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   private contextDefaultValue = null
   private advancedPromptDefaultValue = false
   private citationsDefaultValue = false
+  private chunksOnlyDefaultValue = false
+  private reRankigDefaultValue = false
 
   public countOfOverrides = 0
 
@@ -75,6 +83,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   private hasAlreadyOverridedTopk: boolean;
   private hasAlreadyOverridedContex: boolean;
   private hasAlreadyOverrideAdvancedContex: boolean;
+  private hasAlreadyOverrideChunckOnly: boolean;
+  private hasAlreadyOverrideReRanking : boolean;
   private hasAlreadyOverrideCitations: boolean;
 
   public hideHelpLink: boolean;
@@ -90,6 +100,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     alpha: null,
     top_k: null,
     context: null,
+    chunkOnly: null,
+    reRanking: null,
     advancedPrompt: null,
     citations: null,
   }]
@@ -172,6 +184,24 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
 
 
       this.context = this.selectedNamespace.preview_settings.context
+
+       if (!this.selectedNamespace.preview_settings.chunks_only) {
+        this.chunkOnly = false
+        this.selectedNamespace.preview_settings.chunks_only = this.chunkOnly
+      } else {
+        this.chunkOnly = this.selectedNamespace.preview_settings.chunks_only
+        this.logger.log("[MODAL PREVIEW SETTINGS] chunkOnly ", this.chunkOnly)
+      }
+
+      if (!this.selectedNamespace.preview_settings.reranking) {
+        this.reRanking = false
+        this.selectedNamespace.preview_settings.reranking = this.reRanking
+      } else {
+        this.reRanking = this.selectedNamespace.preview_settings.reranking
+        this.logger.log("[MODAL PREVIEW SETTINGS] reRanking ", this.reRanking)
+      }
+      
+      
 
       this.logger.log("[MODAL PREVIEW SETTINGS] this.selectedNamespace.preview_settings.advancedPrompt ", this.selectedNamespace.preview_settings.advancedPrompt)
       if (!this.selectedNamespace.preview_settings.advancedPrompt) {
@@ -690,8 +720,6 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   }
 
 
-
-
   onChangeTextInContex(event) {
     // this.logger.log("[MODAL PREVIEW SETTINGS] onChangeTextInContex event: ", event);
     this.context = event
@@ -716,9 +744,62 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.kbService.hasChagedAiSettings(this.aiSettingsObject)
   }
 
+  changeChunkOnly(event) {
+    this.saveDialogScrollPosition();
+    this.logger.log("[MODAL PREVIEW SETTINGS] changeChunkOnly event ", event.target.checked)
+    this.chunkOnly = event.target.checked
+    if (!this.wasOpenedFromThePreviewKBModal) {
+      this.selectedNamespace.preview_settings.chunks_only = this.chunkOnly
+      this.logger.log("[MODAL PREVIEW SETTINGS] changeChunkOnly this.selectedNamespace ", this.selectedNamespace)
+    }
+
+    // Comunicate to the subscriber "modal-preview-k-b" the change of the model
+    this.aiSettingsObject[0].chunkOnly = event.target.checked
+    this.kbService.hasChagedAiSettings(this.aiSettingsObject)
+
+    if (this.chunkOnly !== this.selectedNamespace.preview_settings.chunks_only) {   
+      if (this.hasAlreadyOverrideChunckOnly !== true) {
+        this.countOfOverrides = this.countOfOverrides + 1;
+      }
+      this.hasAlreadyOverrideChunckOnly = true
+    } else if (this.chunkOnly === this.selectedNamespace.preview_settings.chunks_only) {
+      this.countOfOverrides = this.countOfOverrides - 1;
+      this.hasAlreadyOverrideChunckOnly = false
+    }
+     this.restoreDialogScrollPosition();
+  }
+ 
+
+
+  changeReranking(event) {
+    this.saveDialogScrollPosition();
+    this.logger.log("[MODAL PREVIEW SETTINGS] changeReranking event ", event.target.checked)
+    this.reRanking = event.target.checked
+    if (!this.wasOpenedFromThePreviewKBModal) {
+      this.selectedNamespace.preview_settings.reranking = this.reRanking
+      this.logger.log("[MODAL PREVIEW SETTINGS] changeReranking this.selectedNamespace ", this.selectedNamespace)
+    }
+
+    // Comunicate to the subscriber "modal-preview-k-b" the change of the model
+    this.aiSettingsObject[0].reRanking = event.target.checked
+    this.kbService.hasChagedAiSettings(this.aiSettingsObject)
+
+    if (this.reRanking !== this.selectedNamespace.preview_settings.reranking) {   
+      if (this.hasAlreadyOverrideReRanking !== true) {
+        this.countOfOverrides = this.countOfOverrides + 1;
+      }
+      this.hasAlreadyOverrideReRanking = true
+    } else if (this.reRanking === this.selectedNamespace.preview_settings.reranking) {
+      this.countOfOverrides = this.countOfOverrides - 1;
+      this.hasAlreadyOverrideReRanking = false
+    }
+    this.restoreDialogScrollPosition();
+  }
+
   changeAdvancePrompt(event) {
     this.logger.log("[MODAL PREVIEW SETTINGS] changeAdvancedContext event ", event.target.checked)
     this.advancedPrompt = event.target.checked
+    
 
     if (!this.wasOpenedFromThePreviewKBModal) {
       this.selectedNamespace.preview_settings.advancedPrompt = this.advancedPrompt
@@ -729,11 +810,11 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.kbService.hasChagedAiSettings(this.aiSettingsObject)
 
     if (this.advancedPrompt !== this.selectedNamespace.preview_settings.advancedPrompt) {
-      // if (this.hasAlreadyOverrideAdvancedContex !== true) {
-      this.countOfOverrides = this.countOfOverrides + 1;
-      // }
+      if (this.hasAlreadyOverrideAdvancedContex !== true) {
+        this.countOfOverrides = this.countOfOverrides + 1;
+      }
       this.hasAlreadyOverrideAdvancedContex = true
-    } else if (this.advancedPrompt !== this.selectedNamespace.preview_settings.advancedPrompt) {
+    } else if (this.advancedPrompt === this.selectedNamespace.preview_settings.advancedPrompt) {
       this.countOfOverrides = this.countOfOverrides - 1;
       this.hasAlreadyOverrideAdvancedContex = false
     }
@@ -784,9 +865,100 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
       this.logger.log('here y hasAlreadyOverrideCitations', this.hasAlreadyOverrideCitations)
       this.countOfOverrides = this.countOfOverrides - 1;
     }
+  }
 
+  /**
+ * Salva la posizione corrente dello scroll del dialog
+ */
+private saveDialogScrollPosition(): void {
+    // Prova vari selettori comuni per dialog di Angular Material
+    const dialogSelectors = [
+        '.mat-dialog-container',
+        '.cdk-global-overlay-wrapper',
+        '.mat-dialog-content',
+        '.cdk-overlay-pane'
+    ];
+    
+    for (const selector of dialogSelectors) {
+        const element = document.querySelector(selector) as HTMLElement;
+        if (element) {
+            // Salva sia scrollTop che l'elemento attivo
+            this.savedScrollData = {
+                scrollTop: element.scrollTop,
+                selector: selector,
+                activeElementId: document.activeElement?.id
+            };
+            this.logger.log('[DIALOG SCROLL] Saved position:', this.savedScrollData);
+            break;
+        }
+    }
+}
 
+/**
+ * Ripristina la posizione dello scroll del dialog
+ */
+private restoreDialogScrollPosition(): void {
+    if (!this.savedScrollData) return;
+    
+    // Usa setTimeout per assicurarti dopo il change detection
+    setTimeout(() => {
+        const element = document.querySelector(this.savedScrollData.selector) as HTMLElement;
+        if (element) {
+            // Ripristina lo scroll
+            element.scrollTop = this.savedScrollData.scrollTop;
+            
+            // Ripristina il focus se necessario
+            if (this.savedScrollData.activeElementId) {
+                const activeElement = document.getElementById(this.savedScrollData.activeElementId);
+                if (activeElement) {
+                    activeElement.focus({ preventScroll: true });
+                }
+            }
+            
+            this.logger.log('[DIALOG SCROLL] Restored position:', this.savedScrollData.scrollTop);
+        }
+        
+        // Pulisci i dati salvati
+        this.savedScrollData = null;
+    }, 10); // 10ms è sufficiente
+}
 
+  // !! Not used
+ onCheckboxClick(event: MouseEvent) {
+    // Prevenire la propagazione per evitare che il click arrivi al label
+    event.stopPropagation();
+    
+    // Salvare le posizioni di scroll sia del dialog content che della window
+    const dialogContent = document.querySelector('.mat-dialog-content') as HTMLElement;
+    const windowScrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const dialogScrollTop = dialogContent?.scrollTop || 0;
+    
+    this.logger.log('[MODAL PREVIEW SETTINGS] onCheckboxClick windowScrollY:', windowScrollY, 'dialogScrollTop:', dialogScrollTop);
+    
+    // Usare doppio requestAnimationFrame per assicurarsi che lo scroll sia completato
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Ripristinare lo scroll della window
+        if (windowScrollY !== 0) {
+          window.scrollTo(0, windowScrollY);
+        }
+        
+        // Ripristinare lo scroll del dialog content se esiste
+        if (dialogContent) {
+          dialogContent.scrollTop = dialogScrollTop;
+        }
+      });
+    });
+    
+    // Anche setTimeout come fallback
+    setTimeout(() => {
+      if (windowScrollY !== 0) {
+        window.scrollTo(0, windowScrollY);
+      }
+      if (dialogContent) {
+        dialogContent.scrollTop = dialogScrollTop;
+      }
+    }, 10);
   }
 
   onSavePreviewSettings() {
@@ -815,6 +987,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.hasAlreadyOverridedContex = false;
     this.hasAlreadyOverrideAdvancedContex = false;
     this.hasAlreadyOverrideCitations = false;
+    this.hasAlreadyOverrideChunckOnly = false;
+    this.hasAlreadyOverrideReRanking = false;
 
     this.selectedModel = this.selectedNamespaceClone.preview_settings.model;
     // this.selectedNamespace.preview_settings.model = this.modelDefaultValue
@@ -847,23 +1021,19 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
 
     this.context = this.selectedNamespaceClone.preview_settings.context;
 
-    this.advancedPrompt = this.selectedNamespaceClone.preview_settings.advancedPrompt
+    this.advancedPrompt = this.selectedNamespaceClone.preview_settings.advancedPrompt;
 
-    this.citations = this.selectedNamespaceClone.preview_settings.citations
+    this.chunkOnly = this.selectedNamespaceClone.preview_settings.chunks_only;
+
+    this.reRanking = this.selectedNamespaceClone.preview_settings.reranking;
+
+    this.citations = this.selectedNamespaceClone.preview_settings.citations;
     this.logger.log('Reset this.citations ', this.citations)
     if (this.citations) {
       this.max_tokens_min = 1024;
     } else {
       this.max_tokens_min = 10;
     }
-    // this.selectedNamespace.preview_settings.context = this.contextDefaultValue;
-
-    // this.aiSettingsObject[0].model = this.modelDefaultValue;
-    // this.aiSettingsObject[0].maxTokens = this.maxTokensDefaultValue
-    // this.aiSettingsObject[0].temperature = this.temperatureDefaultValue;
-    // this.aiSettingsObject[0].top_k = this.topkDefaultValue;
-    // this.aiSettingsObject[0].advancedPrompt = this.advancedPromptDefaultValue;
-    // this.aiSettingsObject[0].citations = this.citationsDefaultValue;
 
     this.aiSettingsObject[0].model = this.selectedModel;
     this.aiSettingsObject[0].maxTokens = this.max_tokens
@@ -872,6 +1042,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.aiSettingsObject[0].context = this.context
     this.aiSettingsObject[0].advancedPrompt = this.advancedPrompt;
     this.aiSettingsObject[0].citations = this.citations;
+    this.aiSettingsObject[0].chunkOnly = this.chunkOnly;
+    this.aiSettingsObject[0].reRanking = this.reRanking;
     this.kbService.hasChagedAiSettings(this.aiSettingsObject)
 
   }
@@ -905,11 +1077,19 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.citations = this.citationsDefaultValue
     this.selectedNamespace.preview_settings.citations = this.citationsDefaultValue;
 
+    this.chunkOnly = this.chunksOnlyDefaultValue
+    this.selectedNamespace.preview_settings.chunks_only = this.chunksOnlyDefaultValue
+    
+    this.reRanking = this.reRankigDefaultValue
+    this.selectedNamespace.preview_settings.reranking = this.reRankigDefaultValue
+
     this.aiSettingsObject[0].model = this.modelDefaultValue;
     this.aiSettingsObject[0].maxTokens = this.maxTokensDefaultValue
     this.aiSettingsObject[0].temperature = this.temperatureDefaultValue;
     this.aiSettingsObject[0].top_k = this.topkDefaultValue;
     this.aiSettingsObject[0].context = this.contextDefaultValue;
+    this.aiSettingsObject[0].chunkOnly = this.chunksOnlyDefaultValue;
+    this.aiSettingsObject[0].reRanking = this.reRankigDefaultValue;
     this.kbService.hasChagedAiSettings(this.aiSettingsObject)
 
   }
@@ -934,6 +1114,8 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
           this.systemContext.close()
           this.advancedContext.close()
           this.contentsSources.close()
+          this.chunkonly.close();
+          this.rerank.close();
         }
       }
     );
@@ -953,7 +1135,9 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
           this.chunkLimit.close()
           this.systemContext.close()
           this.advancedContext.close()
-          this.contentsSources.close()
+          this.contentsSources.close();
+          this.chunkonly.close();
+          this.rerank.close();
         }
       }
     );
@@ -971,7 +1155,9 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
     this.chunkLimit.close()
     this.systemContext.close()
     this.advancedContext.close()
-    this.contentsSources.close()
+    this.contentsSources.close();
+    this.chunkonly.close();
+    this.rerank.close();
   }
 
   // onMouseEnter(event: MouseEvent): void {
@@ -1035,6 +1221,10 @@ export class ModalPreviewSettingsComponent implements OnInit, OnChanges {
   contentsSourcesIsOpened() {
     this.logger.log('[MODAL PREVIEW SETTINGS] contentsSourcesIsOpened')
     this.logger.log("[MODAL PREVIEW SETTINGS] contentsSources sat popover", this.contentsSources)
+  }
+  chunkOnlyIsOpened() {
+    this.logger.log('[MODAL PREVIEW SETTINGS] chunkOnlyIsOpened')
+    this.logger.log("[MODAL PREVIEW SETTINGS] chunkOnly sat popover", this.chunkonly)
   }
 
   goToAIModelDoc() {

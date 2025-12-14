@@ -1,5 +1,30 @@
 # tiledesk-dashboard
 
+### 2.7.144
+- Adds the OpenAI Gpt-5.2 model
+- Adds a link to documentation on how to send a WhatsApp message to contacts in the contact list
+
+### 2.7.143
+- Adds "Chunks only" and "Re-ranking" options to AI Settings, enabling raw source output and intelligent result prioritization
+- Adds the preview of the sent template to the Sent Messages list
+- Adds the ability to create a new contact from the contact list
+
+### 2.7.142
+- Adds the ability to see who left an "abandoned chat" in the non-real-time conversations page and in the history page
+
+### 2.7.141
+- Adds the Messages Sent section to the contact details page
+- Removes notification display on 5xx error
+- Manages abandoned chats on the monitor page
+- Adds the ability to filter for abandoned conversations to the history page
+
+### 2.7.140
+- Improves and fixes bugs for WhatsApp message sending to a contact feature
+
+### 2.7.139
+- Adds the ability to send a WhatsApp message to a single contact from the contact list page
+- Adds the LLM models: Gpt-5.1, Claude-4.5 Sonnet, Claude 4.5 Haiku, Claude Opus 4.5, Claude Opus 4.1
+
 ### 2.7.138
 - Implements caching strategy for projects, project users, and departments to reduce redundant HTTP requests and improve performance
 - Adds cache invalidation on data updates to ensure data consistency
