@@ -1,0 +1,65 @@
+<div class="call-controls-container">
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="spinner"></div>
+    <span>Starting call...</span>
+  </div>
+
+  <!-- Call Buttons -->
+  <div class="call-buttons" *ngIf="!isLoading">
+    <!-- Audio Call Button -->
+    <button 
+      *ngIf="showAudio"
+      [class]="getButtonClass('audio')"
+      [disabled]="!audioEnabled || isLoading"
+      (click)="startAudioCall()"
+      title="Start Audio Call"
+    >
+      <i class="material-icons">call</i>
+      <span>Audio Call</span>
+    </button>
+
+    <!-- Video Call Button -->
+    <button 
+      *ngIf="showVideo"
+      [class]="getButtonClass('video')"
+      [disabled]="!videoEnabled || isLoading"
+      (click)="startVideoCall()"
+      title="Start Video Call"
+    >
+      <i class="material-icons">video_call</i>
+      <span>Video Call</span>
+    </button>
+
+    <!-- Screen Share Button (optional) -->
+    <button 
+      *ngIf="showScreenShare"
+      class="call-btn screen-share"
+      [disabled]="isLoading"
+      title="Share Screen"
+    >
+      <i class="material-icons">screen_share</i>
+      <span>Share</span>
+    </button>
+  </div>
+
+  <!-- Settings Toggles -->
+  <div class="settings" *ngIf="!isLoading">
+    <label class="toggle-switch" *ngIf="showAudio">
+      <input type="checkbox" [(ngModel)]="audioEnabled" (change)="toggleAudio()">
+      <span class="slider"></span>
+      <span class="label">Microphone</span>
+    </label>
+
+    <label class="toggle-switch" *ngIf="showVideo">
+      <input type="checkbox" [(ngModel)]="videoEnabled" (change)="toggleVideo()">
+      <span class="slider"></span>
+      <span class="label">Camera</span>
+    </label>
+  </div>
+</div>

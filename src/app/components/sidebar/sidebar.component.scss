@@ -1536,7 +1536,30 @@ button.close {
   bottom: 30px;
 }
 
+// MENU ELEMENT SUPPORT STYLE OVERRIDE
+// Loading spinner for video calls
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  
+  mat-spinner {
+    margin: 0 auto;
+  }
+}
 
+// Disabled state for video call button
+#video-call-anchor.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  
+  &:hover {
+    background-color: transparent !important;
+  }
+}
+// end
+  
 ::ng-deep .mat-menu-panel.menuElementSupport {
   margin-left: 65px !important;
   top: 30px;

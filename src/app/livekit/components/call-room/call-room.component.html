@@ -1,0 +1,118 @@
+<div class="call-room-container" [class.connected]="isConnected">
+  <!-- Call Header -->
+  <div class="call-header">
+    <div class="call-info">
+      <span class="call-type">{{ type === 'video' ? '📹 Video Call' : '🎧 Audio Call' }}</span>
+      <span class="call-duration">{{ formatDuration(callDuration) }}</span>
+      <span class="participant-count">👥 {{ getParticipantCount() }}</span>
+      <span class="connection-status" [class.connecting]="isConnecting()">
+        {{ getConnectionStatus() }}
+      </span>
+    </div>
+    
+    <button class="leave-btn" (click)="leaveCall()" matTooltip="Leave Call">
+      <i class="material-icons">call_end</i>
+      Leave
+    </button>
+  </div>
+
+  <!-- Video Container -->
+  <div class="video-area">
+    <!-- Video Grid -->
+    <div #videoContainer class="video-grid" [class]="getGridClass()">
+      <!-- Video elements will be dynamically added here -->
+    </div>
+
+    <!-- Connection Status Overlay -->
+    <div *ngIf="isConnecting()" class="connection-overlay">
+      <div class="spinner"></div>
+      <div class="status-text">{{ getConnectionStatus() }}</div>
+    </div>
+
+    <!-- No Video Placeholder -->
+    <div *ngIf="type === 'audio' || participants.length === 0" class="audio-only-view">
+      <div class="audio-icon">
+        <i class="material-icons">headset</i>
+      </div>
+      <div class="participant-list">
+        <div *ngFor="let participant of participants" class="audio-participant" 
+             [class.speaking]="participant.isSpeaking">
+          <div class="avatar">{{ participant.name.charAt(0) }}</div>
+          <div class="participant-info">
+            <span class="name">{{ participant.name }}</span>
+            <div class="participant-status">
+              <i *ngIf="participant.isSpeaking" class="material-icons speaking">mic</i>
+              <span class="mic-status">{{ participant.isMicrophoneEnabled ? 'Mic on' : 'Mic off' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Controls -->
+  <div class="call-controls-bar">
+    <!-- Video Toggle -->
+    <button 
+      class="control-btn"
+      [class.active]="isVideoEnabled"
+      [class.disabled]="type === 'audio'"
+      (click)="toggleVideo()"
+      matTooltip="Toggle Video"
+      [disabled]="type === 'audio'"
+    >
+      <i class="material-icons">
+        {{ isVideoEnabled ? 'videocam' : 'videocam_off' }}
+      </i>
+      <span class="btn-label">{{ isVideoEnabled ? 'Video On' : 'Video Off' }}</span>
+    </button>
+
+    <!-- Audio Toggle -->
+    <button 
+      class="control-btn"
+      [class.active]="isAudioEnabled"
+      (click)="toggleAudio()"
+      matTooltip="Toggle Microphone"
+    >
+      <i class="material-icons">
+        {{ isAudioEnabled ? 'mic' : 'mic_off' }}
+      </i>
+      <span class="btn-label">{{ isAudioEnabled ? 'Mic On' : 'Mic Off' }}</span>
+    </button>
+
+    <!-- Screen Share -->
+    <button 
+      class="control-btn"
+      [class.active]="isScreenSharing"
+      [class.disabled]="type === 'audio'"
+      (click)="toggleScreenShare()"
+      matTooltip="Share Screen"
+      [disabled]="type === 'audio'"
+    >
+      <i class="material-icons">screen_share</i>
+      <span class="btn-label">{{ isScreenSharing ? 'Stop Share' : 'Share Screen' }}</span>
+    </button>
+
+    <!-- Stats -->
+    <div class="call-stats" *ngIf="callStats">
+      <div class="stat-item" matTooltip="Call Duration">
+        <i class="material-icons">schedule</i>
+        <span>{{ formatDuration(callStats.duration) }}</span>
+      </div>
+      <div class="stat-item" matTooltip="Participants">
+        <i class="material-icons">people</i>
+        <span>{{ callStats.participants }}</span>
+      </div>
+      <div *ngIf="callStats.packetLoss > 0" class="stat-item warning" matTooltip="Packet Loss">
+        <i class="material-icons">warning</i>
+        <span>{{ callStats.packetLoss }}%</span>
+      </div>
+    </div>
+
+    <!-- Leave Button -->
+    <button class="control-btn leave" (click)="leaveCall()" matTooltip="Leave Call">
+      <i class="material-icons">call_end</i>
+      <span class="btn-label">Leave</span>
+    </button>
+  </div>
+</div>

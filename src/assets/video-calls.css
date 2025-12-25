@@ -1,0 +1,156 @@
+/* Video Call Global Styles */
+
+/* Material Icons */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+/* Call Dialog Overrides */
+.mat-dialog-container.call-room-dialog {
+  padding: 0 !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+}
+
+/* Prevent body scroll when dialog is open */
+body.call-dialog-open {
+  overflow: hidden !important;
+}
+
+/* Loading States */
+.call-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 30px;
+  text-align: center;
+  color: #666;
+}
+
+.call-loading .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: call-spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+.call-loading h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-weight: 500;
+}
+
+.call-loading p {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Error States */
+.call-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 30px;
+  text-align: center;
+  background: #ffebee;
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.call-error .error-icon {
+  font-size: 48px;
+  color: #f44336;
+  margin-bottom: 20px;
+}
+
+.call-error h3 {
+  margin: 0 0 10px 0;
+  color: #c62828;
+  font-weight: 500;
+}
+
+.call-error p {
+  margin: 0 0 20px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .call-room-dialog {
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+  
+  .call-controls-bar {
+    flex-wrap: wrap;
+    gap: 10px !important;
+    padding: 10px !important;
+  }
+  
+  .call-controls-bar .control-btn {
+    min-width: 80px !important;
+    padding: 10px 15px !important;
+  }
+  
+  .call-info {
+    flex-wrap: wrap;
+    gap: 10px !important;
+    font-size: 12px !important;
+  }
+  
+  .video-grid.grid-many {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)) !important;
+    grid-auto-rows: 180px !important;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .call-controls-container {
+    background: #2d2d2d !important;
+    color: #fff !important;
+  }
+  
+  .call-controls-container .settings .label {
+    color: #ccc !important;
+  }
+}
+
+/* Animations */
+@keyframes call-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes call-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Scrollbar Styling */
+.call-scrollable::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.call-scrollable::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.call-scrollable::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.call-scrollable::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

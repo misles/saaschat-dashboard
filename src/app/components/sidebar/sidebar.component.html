@@ -229,7 +229,35 @@
 
 
 
-
+    <!-- -------------------------------------------------------- -->
+    <!-- Video Calls Icon -->
+    <!-- -------------------------------------------------------- -->
+    <ng-container *ngIf="project && showVideoCalls">
+      <div id="video-call-anchor-wpr" 
+        matTooltipClass="sb-mat-tooltip"
+        matTooltip="{{ 'Video Calls' | translate }}" 
+        #tooltip="matTooltip" matTooltipPosition='right'
+        matTooltipHideDelay="100" routerLinkActive="item-active" 
+        [class.item-active]="VIDEO_CALL_ROUTE_IS_ACTIVE">
+        
+        <!-- Loading spinner while checking permissions -->
+        <div *ngIf="isCheckingCallPermissions" class="permission-checking">
+          <mat-spinner diameter="20"></mat-spinner>
+        </div>
+        
+        <!-- Video Call Button -->
+        <a id="video-call-anchor" #videocallbtn 
+          (click)="startVideoCall()"
+          [class.disabled]="!showVideoCalls || isCheckingCallPermissions">
+          <span>
+            <!-- Video Call Icon SVG -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+              <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+            </svg>
+          </span>
+        </a>
+      </div>
+    </ng-container>
 
 
 

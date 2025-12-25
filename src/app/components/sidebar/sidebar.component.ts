@@ -38,7 +38,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { UserModalComponent } from 'app/users/user-modal/user-modal.component';
 import { ProjectPlanService } from 'app/services/project-plan.service';
 import { INFO_MENU_ITEMS } from 'app/support/support-utils';
-
+import { LivekitService } from '../../livekit/livekit.service'; // livekit
 import { ShepherdService } from 'angular-shepherd';
 import { getSteps as defaultSteps, defaultStepOptions } from './sidebar.tour.config';
 
@@ -85,6 +85,13 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   test: Date = new Date();
 
   // tparams = brand;
+  project: any;
+  auth: any;
+  notifyService: any;
+  // ✅ Add these LiveKit properties:
+  showVideoCalls = false;
+  isCheckingCallPermissions = false;
+  VIDEO_CALL_ROUTE_IS_ACTIVE = false;
 
   // hidechangelogrocket = brand.sidebar__hide_changelog_rocket;
   tparams: any;
@@ -132,7 +139,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   SIDEBAR_IS_SMALL: boolean = true;
   projectUser_id: string;
 
-  project: Project;
+  //project: Project;
   projectId: string;
   user: any;
 
@@ -290,7 +297,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     public location: Location,
     private route: ActivatedRoute,
     private projectService: ProjectService,
-    private auth: AuthService,
+    //private auth: AuthService,
     private usersService: UsersService,
     private notify: NotifyService,
     private uploadImageService: UploadImageService,
@@ -302,12 +309,13 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     public wsRequestsService: WsRequestsService,
     private logger: LoggerService,
     private sanitizer: DomSanitizer,
-    private faqKbService: FaqKbService,
+    private faqKbService: FaqKbService,    
     public dialog: MatDialog,
     private prjctPlanService: ProjectPlanService,
     private shepherdService: ShepherdService,
     public localDbService: LocalDbService,
     private element: ElementRef,
+    private livekitService: LivekitService, // livekit
     private renderer: Renderer2
   ) {
     this.getBaseUrlAndThenProjectPlan();
@@ -352,6 +360,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     this.getNotificationSoundPreferences();
     this.getWsCurrentUserAvailability$();
     // this.getProjectPlan()
+    this.checkVideoCallPermissions();
 
     // this.listenToKbVersion()
 
@@ -2410,8 +2419,209 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   // }
 
 
+  // ============================================
+  // LIVEKIT VIDEO CALL METHODS
+  // ============================================
 
+    
+  /**
+   * Check if video calls are allowed
+   */
+  async checkVideoCallPermissions(): Promise<void> {
+    if (!this.project || !this.project._id) {
+      this.showVideoCalls = false;
+      return;
+    }
 
+    if (!this.auth || !this.auth.user_id) {
+      this.showVideoCalls = false;
+      return;
+    }
+
+    this.isCheckingCallPermissions = true;
+
+    try {
+      // Check with backend if video calls are enabled
+      const response = await this.livekitService.canMakeCall(
+        this.project._id,
+        'video'
+      );
+      
+      this.showVideoCalls = response.allowed;
+      
+      console.log('Video call permissions:', response);
+    } catch (error) {
+      console.error('Error checking video call permissions:', error);
+      this.showVideoCalls = false;
+      
+      // Fallback: check project settings directly
+      try {
+        const usage = await this.livekitService.getCallUsage(this.project._id);
+        this.showVideoCalls = usage?.video_calls ?? false;
+      } catch (fallbackError) {
+        this.showVideoCalls = false;
+      }
+    } finally {
+      this.isCheckingCallPermissions = false;
+    }
+  }
+
+    /**
+     * Handle video call button click
+     */
+    async startVideoCall(): Promise<void> {
+      console.log('🎥 Video call button clicked');
+      
+      // Basic validations
+      if (!this.project || !this.project._id) {
+        console.error('No project selected');
+        return;
+      }
+      
+      if (!this.showVideoCalls) {
+        console.warn('Video calls not enabled for this project');
+        return;
+      }
+      
+      // Double-check permissions
+      const canCall = await this.livekitService.canMakeCall(
+        this.project._id,
+        'video'
+      );
+      
+      if (!canCall.allowed) {
+        console.error('Call not allowed:', canCall.message);
+        
+        if (this.notifyService && this.notifyService.show) {
+          this.notifyService.show(
+            canCall.message || 'Video calls are not available for this project',
+            'error'
+          );
+        }
+        return;
+      }
+      
+      // Get participant name
+      let participantName = 'User';
+      if (this.auth) {
+        participantName = this.auth.firstname || 'User';
+        if (this.auth.lastname) {
+          participantName += ' ' + this.auth.lastname;
+        }
+      }
+      
+      console.log('Starting video call for:', participantName);
+      
+      try {
+        // Get LiveKit token from backend
+        const tokenData = await this.livekitService.getToken(
+          this.project._id,
+          'video',
+          participantName
+        );
+        
+        console.log('Token received:', tokenData);
+        
+        // Open call room dialog
+        this.openCallRoomDialog(tokenData);
+        
+      } catch (error: any) {
+        console.error('❌ Failed to start video call:', error);
+        
+        if (this.notifyService && this.notifyService.show) {
+          this.notifyService.show(
+            error.message || 'Failed to start video call. Please try again.',
+            'error'
+          );
+        }
+      }
+    }
+
+    /**
+     * Open call room dialog
+     */
+    openCallRoomDialog(tokenData: any): void {
+      console.log('Opening call room dialog');
+      
+      // Import CallRoomComponent dynamically to avoid circular dependencies
+      import('../../livekit/components/call-room/call-room.component').then(
+        ({ CallRoomComponent }) => {
+          const dialogRef = this.dialog.open(CallRoomComponent, {
+            width: '90vw',
+            height: '90vh',
+            maxWidth: '1400px',
+            maxHeight: '900px',
+            panelClass: 'call-room-dialog',
+            disableClose: true,
+            data: {
+              token: tokenData.token,
+              url: tokenData.url,
+              type: 'video',
+              projectId: this.project._id,
+              participantName: this.auth?.firstname 
+                ? `${this.auth.firstname} ${this.auth.lastname || ''}`
+                : 'User'
+            }
+          });
+          
+          dialogRef.afterClosed().subscribe(result => {
+            console.log('Call room closed:', result);
+          });
+        }
+      ).catch(error => {
+        console.error('Failed to load call room component:', error);
+        
+        // Fallback: show simple dialog
+        const dialogRef = this.dialog.open(CallRoomFallbackComponent, {
+          width: '500px',
+          data: { tokenData, project: this.project }
+        });
+      });
+    }
+
+    // Simple fallback component
+    openCallRoomDialog(tokenData: any): void {
+      console.log('Opening call room dialog');
+      
+      // Import CallRoomComponent dynamically to avoid circular dependencies
+      import('../../livekit/components/call-room/call-room.component').then(
+        ({ CallRoomComponent }) => {
+          const dialogRef = this.dialog.open(CallRoomComponent, {
+            width: '90vw',
+            height: '90vh',
+            maxWidth: '1400px',
+            maxHeight: '900px',
+            panelClass: 'call-room-dialog',
+            disableClose: true,
+            data: {
+              token: tokenData.token,
+              url: tokenData.url,
+              type: 'video',
+              projectId: this.project._id,
+              participantName: this.auth?.firstname 
+                ? `${this.auth.firstname} ${this.auth.lastname || ''}`
+                : 'User'
+            }
+          });
+          
+          dialogRef.afterClosed().subscribe(result => {
+            console.log('Call room closed:', result);
+          });
+        }
+      ).catch(error => {
+        console.error('Failed to load call room component:', error);
+        
+        // ✅ SIMPLE FALLBACK: Show error dialog instead of inline component
+        this.dialog.open(ErrorDialogComponent, {
+          width: '500px',
+          data: { 
+            title: 'Video Call Error',
+            message: 'Failed to load video call interface. Please try again.',
+            error: error.message 
+          }
+        });
+      });
+    }
 
 
 
