@@ -4,6 +4,8 @@ import { MarkerService } from './services/marker.service';
 import { LoggerService } from './services/logger/logger.service';
 import { HomeService } from './services/home.service';
 import { ActivitiesService } from './activities/activities-service/activities.service';
+import { LivekitModule } from './livekit/livekit.module';
+
 
 
 // import { LoggerInstance } from './services/logger/LoggerInstance';
@@ -792,6 +794,9 @@ const appInitializerFn = (appConfig: AppConfigService, brandService: BrandServic
         deps: [HttpClient],
       },
     }),
+    // LivekitModule
+    LivekitModule,
+    HttpClientModule  // Make sure this is imported
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
