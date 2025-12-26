@@ -109,6 +109,7 @@
     "karma": "^6.4.1",
     "karma-chrome-launcher": "~2.2.0",
     "karma-cli": "~1.0.1",
+    "karma-coverage": "^2.2.1",
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.0.0",
     "protractor": "^5.4.4",
