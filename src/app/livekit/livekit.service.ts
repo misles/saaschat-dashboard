@@ -582,8 +582,10 @@ export class LivekitService implements OnDestroy {
         throw new Error('No video track found in screen share');
       }
       
-      this.screenTrack = new LocalVideoTrack(screenVideoTrack, {
-        source: Track.Source.ScreenShare
+      this.screenTrack = new LocalVideoTrack(screenVideoTrack);  // ✅
+      // Source will be set in publishTrack()
+      await this.room.localParticipant.publishTrack(this.screenTrack, {
+        source: Track.Source.ScreenShare  // ✅ Source goes here
       });
 
       await this.room.localParticipant.publishTrack(this.screenTrack, {
