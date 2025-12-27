@@ -14,7 +14,9 @@ import {
   TrackPublication,
   VideoPresets,
   RoomEvent,
-  DisconnectReason
+  DisconnectReason,
+  createLocalVideoTrack,  // ✅ Factory function
+  createLocalAudioTrack   // ✅ Factory function
 } from 'livekit-client';
 
 import { 
@@ -69,7 +71,6 @@ export class LivekitService implements OnDestroy {
 
   async canMakeCall(projectId: string, type: 'audio' | 'video'): Promise<CanMakeCallResponse> {
     try {
-      // ✅ RxJS 6.5.4: Use .toPromise()
       const response = await this.http.post<CanMakeCallResponse>(
         `${this.apiBase}/livekit/can-make-call`,
         { 
@@ -101,7 +102,6 @@ export class LivekitService implements OnDestroy {
     roomName?: string
   ): Promise<TokenResponse> {
     try {
-      // ✅ RxJS 6.5.4: Use .toPromise()
       const response = await this.http.post<TokenResponse>(
         `${this.apiBase}/livekit/token`,
         {
@@ -130,7 +130,6 @@ export class LivekitService implements OnDestroy {
 
   async recordCallUsage(projectId: string, duration: number, type: 'audio' | 'video'): Promise<any> {
     try {
-      // ✅ RxJS 6.5.4: Use .toPromise()
       return await this.http.post(
         `${this.apiBase}/livekit/record-usage`,
         {
@@ -149,7 +148,6 @@ export class LivekitService implements OnDestroy {
 
   async getCallUsage(projectId: string): Promise<CallSettings> {
     try {
-      // ✅ RxJS 6.5.4: Use .toPromise()
       const response = await this.http.get<CallSettings>(
         `${this.apiBase}/livekit/usage?project_id=${projectId}`
       ).toPromise();
@@ -175,7 +173,7 @@ export class LivekitService implements OnDestroy {
     }
   }
 
-  // ==================== LIVEKIT ROOM METHODS (v1.13.0 CORRECTED) ====================
+  // ==================== LIVEKIT ROOM METHODS ====================
 
   async joinCall(
     token: string,
@@ -189,7 +187,6 @@ export class LivekitService implements OnDestroy {
     try {
       this.callState$.next(CallState.CONNECTING);
       
-      // 1. Create room instance (v1.13.0 syntax)
       this.room = new Room({
         adaptiveStream: true,
         dynacast: true,
@@ -198,26 +195,18 @@ export class LivekitService implements OnDestroy {
         }
       });
       
-      // 2. Setup event listeners with CORRECT RoomEvent enum
       this.setupRoomListeners();
+      await this.room.connect(url, token, { autoSubscribe: true });
       
-      // 3. Connect to room
-      await this.room.connect(url, token, {
-        autoSubscribe: true
-      });
-      
-      // 4. Set participant name
       if (options.participantName && this.room.localParticipant) {
         this.room.localParticipant.setName(options.participantName);
       }
       
-      // 5. Setup local media (WITH CORRECT track creation)
       await this.setupLocalMedia(
         options.videoEnabled ?? true,
         options.audioEnabled ?? true
       );
       
-      // 6. Update state
       this.callState$.next(CallState.CONNECTED);
       this.isConnected$.next(true);
       this.callStartTime = new Date();
@@ -233,9 +222,7 @@ export class LivekitService implements OnDestroy {
         } 
       });
       
-      // 7. Start stats collection
       this.startStatsCollection();
-      
       return this.room;
       
     } catch (error: any) {
@@ -243,23 +230,16 @@ export class LivekitService implements OnDestroy {
       this.callState$.next(CallState.DISCONNECTED);
       this.cleanup();
       
-      // Don't retry on auth errors
       if (error?.message?.includes('token') || 
           error?.message?.includes('expired') ||
-          error?.message?.includes('permission') ||
-          error?.message?.includes('unauthorized')) {
-        console.log('Auth error, not retrying');
+          error?.message?.includes('permission')) {
         throw error;
       }
       
-      // Auto-reconnect for network issues
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++;
         console.log(`Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}...`);
-        
-        // Wait before retry
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
         return this.joinCall(token, url, options);
       }
       
@@ -270,7 +250,6 @@ export class LivekitService implements OnDestroy {
   private setupRoomListeners(): void {
     if (!this.room) return;
 
-    // ✅ Participant connected (CORRECT RoomEvent enum)
     this.room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
       this.ngZone.run(() => {
         this.addParticipant(participant);
@@ -278,7 +257,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Participant disconnected
     this.room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
       this.ngZone.run(() => {
         this.removeParticipant(participant.identity);
@@ -286,7 +264,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Track subscribed
     this.room.on(RoomEvent.TrackSubscribed, (track: Track, publication: TrackPublication, participant: RemoteParticipant | LocalParticipant) => {
       this.ngZone.run(() => {
         this.updateParticipantTracks();
@@ -294,7 +271,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Track unsubscribed
     this.room.on(RoomEvent.TrackUnsubscribed, (track: Track, publication: TrackPublication, participant: RemoteParticipant | LocalParticipant) => {
       this.ngZone.run(() => {
         this.updateParticipantTracks();
@@ -302,7 +278,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Track muted/unmuted
     this.room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: RemoteParticipant | LocalParticipant) => {
       this.ngZone.run(() => {
         this.updateParticipantTracks();
@@ -315,7 +290,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Connection state changed (CORRECT RoomEvent enum)
     this.room.on(RoomEvent.Disconnected, (reason?: DisconnectReason) => {
       this.ngZone.run(() => {
         this.callState$.next(CallState.DISCONNECTED);
@@ -343,7 +317,6 @@ export class LivekitService implements OnDestroy {
       });
     });
 
-    // ✅ Local track published/unpublished
     this.room.on(RoomEvent.LocalTrackPublished, (publication: TrackPublication, participant: LocalParticipant) => {
       this.ngZone.run(() => {
         this.updateActiveTracks();
@@ -363,22 +336,19 @@ export class LivekitService implements OnDestroy {
   ): Promise<void> {
     if (!this.room) return;
 
-    // Clean existing tracks
     this.cleanupLocalTracks();
-
     const tracks: LocalTrack[] = [];
 
     try {
-      // Request camera/mic permissions
       if (enableVideo || enableAudio) {
         const devices = await navigator.mediaDevices.enumerateDevices();
         const hasCamera = devices.some(d => d.kind === 'videoinput');
         const hasMicrophone = devices.some(d => d.kind === 'audioinput');
 
-        // ✅ CORRECT: Create video track if enabled and available
         if (enableVideo && hasCamera) {
           try {
-            const videoTrack = await this.createLocalVideoTrack({
+            // ✅ CONSISTENT: Direct factory function usage
+            const videoTrack = await createLocalVideoTrack({
               resolution: VideoPresets.h720.resolution,
               facingMode: 'user'
             });
@@ -394,10 +364,10 @@ export class LivekitService implements OnDestroy {
           }
         }
 
-        // ✅ CORRECT: Create audio track if enabled and available
         if (enableAudio && hasMicrophone) {
           try {
-            const audioTrack = await this.createLocalAudioTrack();
+            // ✅ CONSISTENT: Direct factory function usage
+            const audioTrack = await createLocalAudioTrack();
             if (audioTrack) {
               tracks.push(audioTrack);
               await this.room.localParticipant.publishTrack(audioTrack);
@@ -417,53 +387,16 @@ export class LivekitService implements OnDestroy {
     }
   }
 
-  // ✅ CORRECT track creation helper methods for v1.13.0
-  private async createLocalVideoTrack(options?: any): Promise<LocalVideoTrack | null> {
-    try {
-      // ✅ CORRECT: Try the factory function first (v1.13.0 style)
-      const livekitModule = await import('livekit-client');
-      
-      if (typeof livekitModule.createLocalVideoTrack === 'function') {
-        return await livekitModule.createLocalVideoTrack(options);
-      } else {
-        // Fallback for older import style
-        console.warn('createLocalVideoTrack not found, using LocalVideoTrack.create');
-        return await LocalVideoTrack.create(options);
-      }
-    } catch (error) {
-      console.error('Failed to create video track:', error);
-      return null;
-    }
-  }
-
-  private async createLocalAudioTrack(): Promise<LocalAudioTrack | null> {
-    try {
-      // ✅ CORRECT: Try the factory function first
-      const livekitModule = await import('livekit-client');
-      
-      if (typeof livekitModule.createLocalAudioTrack === 'function') {
-        return await livekitModule.createLocalAudioTrack();
-      } else {
-        // Fallback for older import style
-        console.warn('createLocalAudioTrack not found, using LocalAudioTrack.create');
-        return await LocalAudioTrack.create();
-      }
-    } catch (error) {
-      console.error('Failed to create audio track:', error);
-      return null;
-    }
-  }
-
   private cleanupLocalTracks(): void {
-    // Stop all local tracks
+    // ✅ FIXED: Correct unpublish order - unpublish FIRST, then stop
     this.localTracks.forEach(track => {
-      track.stop();
-      this.room?.localParticipant.unpublishTrack(track);
+      this.room?.localParticipant.unpublishTrack(track);  // ✅ Unpublish first
+      track.stop();  // ✅ Stop after unpublishing
     });
     
     if (this.screenTrack) {
-      this.screenTrack.stop();
-      this.room?.localParticipant.unpublishTrack(this.screenTrack);
+      this.room?.localParticipant.unpublishTrack(this.screenTrack);  // ✅ Unpublish first
+      this.screenTrack.stop();  // ✅ Stop after unpublishing
     }
     
     this.localTracks = [];
@@ -478,12 +411,10 @@ export class LivekitService implements OnDestroy {
 
     const participants: Participant[] = [];
     
-    // Add local participant
     if (this.room.localParticipant) {
       participants.push(this.mapParticipant(this.room.localParticipant));
     }
     
-    // Add remote participants
     this.room.participants.forEach((participant: RemoteParticipant) => {
       participants.push(this.mapParticipant(participant));
     });
@@ -496,14 +427,12 @@ export class LivekitService implements OnDestroy {
 
     const trackInfos: TrackInfo[] = [];
     
-    // Local tracks
     this.room.localParticipant.tracks.forEach((publication: TrackPublication) => {
       if (publication.track) {
         trackInfos.push({
           sid: publication.trackSid || '',
           type: publication.track.kind as 'audio' | 'video',
           isMuted: publication.isMuted,
-          // ✅ FIXED: Use !track.isMuted instead of track.isEnabled
           isEnabled: !publication.track.isMuted,
           source: publication.track.source?.toString() || 'unknown'
         });
@@ -513,45 +442,44 @@ export class LivekitService implements OnDestroy {
     this.activeTracks$.next(trackInfos);
   }
 
-  // ✅ FIXED: mapParticipant method without Array.from issues
   private mapParticipant(livekitParticipant: LocalParticipant | RemoteParticipant): Participant {
-    // ✅ CORRECT: Manually collect tracks instead of using Array.from
-    const videoTracks: TrackPublication[] = [];
-    const audioTracks: TrackPublication[] = [];
-    
-    // Collect video tracks
-    livekitParticipant.videoTracks.forEach((publication: TrackPublication) => {
-      videoTracks.push(publication);
-    });
-    
-    // Collect audio tracks
-    livekitParticipant.audioTracks.forEach((publication: TrackPublication) => {
-      audioTracks.push(publication);
-    });
-    
     const isLocal = livekitParticipant instanceof LocalParticipant;
     
-    // Find camera track
-    const cameraPublication = videoTracks.find(p => 
-      p.isSubscribed && p.track?.source === Track.Source.Camera
-    );
+    let cameraPublication: TrackPublication | null = null;
+    livekitParticipant.videoTracks.forEach((publication: TrackPublication) => {
+      if (publication.isSubscribed && publication.track?.source === Track.Source.Camera) {
+        cameraPublication = publication;
+      }
+    });
     
-    // ✅ CORRECT: Use Track.Source.ScreenShare enum
-    const screenPublication = videoTracks.find(p => 
-      p.isSubscribed && p.track?.source === Track.Source.ScreenShare
-    );
+    let screenPublication: TrackPublication | null = null;
+    livekitParticipant.videoTracks.forEach((publication: TrackPublication) => {
+      if (publication.isSubscribed && publication.track?.source === Track.Source.ScreenShare) {
+        screenPublication = publication;
+      }
+    });
+    
+    let audioTrack: any = undefined;
+    let hasAudio = false;
+    
+    livekitParticipant.audioTracks.forEach((publication: TrackPublication) => {
+      if (publication.isSubscribed && publication.track) {
+        audioTrack = publication.track;
+        hasAudio = true;
+      }
+    });
     
     return {
       identity: livekitParticipant.identity,
       name: livekitParticipant.name || livekitParticipant.identity,
       isSpeaking: livekitParticipant.isSpeaking,
       isCameraEnabled: !!cameraPublication,
-      isMicrophoneEnabled: audioTracks.some(p => p.isSubscribed),
+      isMicrophoneEnabled: hasAudio,
       isScreenSharing: !!screenPublication,
       isLocal: isLocal,
       elementId: `participant-${livekitParticipant.identity}`,
       videoTrack: cameraPublication?.track,
-      audioTrack: audioTracks.find(p => p.isSubscribed)?.track
+      audioTrack: audioTrack
     };
   }
 
@@ -569,14 +497,13 @@ export class LivekitService implements OnDestroy {
     this.participants$.next(filtered);
   }
 
-  // ==================== CONTROL METHODS (v1.13.0 CORRECTED) ====================
+  // ==================== CONTROL METHODS ====================
 
   async toggleVideo(): Promise<void> {
     if (!this.room) return;
 
     try {
       if (this.localVideoEnabled$.value) {
-        // Find and unpublish video track
         const videoTrack = this.localTracks.find(t => t.kind === Track.Kind.Video) as LocalVideoTrack;
         if (videoTrack) {
           await this.room.localParticipant.unpublishTrack(videoTrack);
@@ -585,8 +512,8 @@ export class LivekitService implements OnDestroy {
         }
         this.localVideoEnabled$.next(false);
       } else {
-        // ✅ CORRECT: Create and publish new video track
-        const videoTrack = await this.createLocalVideoTrack({
+        // ✅ CONSISTENT: Direct factory function usage
+        const videoTrack = await createLocalVideoTrack({
           resolution: VideoPresets.h720.resolution
         });
         
@@ -607,7 +534,6 @@ export class LivekitService implements OnDestroy {
 
     try {
       if (this.localAudioEnabled$.value) {
-        // Find and unpublish audio track
         const audioTrack = this.localTracks.find(t => t.kind === Track.Kind.Audio) as LocalAudioTrack;
         if (audioTrack) {
           await this.room.localParticipant.unpublishTrack(audioTrack);
@@ -616,8 +542,8 @@ export class LivekitService implements OnDestroy {
         }
         this.localAudioEnabled$.next(false);
       } else {
-        // ✅ CORRECT: Create and publish new audio track
-        const audioTrack = await this.createLocalAudioTrack();
+        // ✅ CONSISTENT: Direct factory function usage
+        const audioTrack = await createLocalAudioTrack();
         if (audioTrack) {
           await this.room.localParticipant.publishTrack(audioTrack);
           this.localTracks.push(audioTrack);
@@ -634,12 +560,10 @@ export class LivekitService implements OnDestroy {
     if (!this.room) return;
 
     try {
-      // Stop current screen share if exists
       if (this.screenTrack) {
         await this.stopScreenShare();
       }
 
-      // ✅ CORRECT: v1.13.0 screen sharing
       const displayMediaOptions: any = {
         video: {
           displaySurface: 'monitor',
@@ -648,34 +572,26 @@ export class LivekitService implements OnDestroy {
           width: { ideal: 1920 },
           height: { ideal: 1080 }
         },
-        audio: false // ✅ CORRECT: No audio for screen share (prevents echo)
+        audio: false
       };
 
-      // Get screen capture stream
       const screenStream = await (navigator.mediaDevices as any).getDisplayMedia(displayMediaOptions);
-      
-      // Create video track from stream
       const screenVideoTrack = screenStream.getVideoTracks()[0];
+      
       if (!screenVideoTrack) {
         throw new Error('No video track found in screen share');
       }
       
-      // ✅ FIXED: v1.13.0 compatible screen track creation
-      // LiveKit v1.13.0 doesn't support createLocalVideoTrack with mediaStreamTrack
-      // Use the constructor directly
       this.screenTrack = new LocalVideoTrack(screenVideoTrack, {
-        name: 'screen-share',
         source: Track.Source.ScreenShare
       });
 
-      // Publish screen track
       await this.room.localParticipant.publishTrack(this.screenTrack, {
         source: Track.Source.ScreenShare
       });
       
       this.isScreenSharing$.next(true);
       
-      // Handle when user stops screen sharing via browser UI
       screenVideoTrack.onended = () => {
         this.stopScreenShare();
       };
@@ -699,6 +615,13 @@ export class LivekitService implements OnDestroy {
     try {
       await this.room.localParticipant.unpublishTrack(this.screenTrack);
       this.screenTrack.stop();
+      
+      // ✅ OPTIONAL: Clean up the underlying mediaStreamTrack
+      const mediaTrack = this.screenTrack.mediaStreamTrack;
+      if (mediaTrack) {
+        mediaTrack.stop();
+      }
+      
       this.screenTrack = null;
       this.isScreenSharing$.next(false);
     } catch (error) {
@@ -717,7 +640,6 @@ export class LivekitService implements OnDestroy {
   // ==================== UTILITY METHODS ====================
 
   private startStatsCollection(): void {
-    // Clear existing interval
     if (this.statsInterval) {
       clearInterval(this.statsInterval);
     }
@@ -737,18 +659,12 @@ export class LivekitService implements OnDestroy {
         packetLoss: 0
       };
 
-      // ✅ CORRECT: Handle optional getStats() safely
       try {
         if (typeof (this.room as any).getStats === 'function') {
-          const roomStats = await (this.room as any).getStats();
-          if (roomStats) {
-            // Process stats if available (implementation specific to v1.13.0)
-            // This is optional - not all deployments have stats enabled
-          }
+          await (this.room as any).getStats();
         }
       } catch (error) {
         console.debug('Could not fetch detailed stats:', error);
-        // Not a critical error - continue without detailed stats
       }
 
       this.callStats$.next(stats);
@@ -772,21 +688,17 @@ export class LivekitService implements OnDestroy {
   }
 
   private cleanup(): void {
-    // Clear intervals
     if (this.statsInterval) {
       clearInterval(this.statsInterval);
       this.statsInterval = null;
     }
     
-    // Cleanup local tracks
     this.cleanupLocalTracks();
     
-    // Reset room
     this.room = null;
     this.callStartTime = null;
     this.reconnectAttempts = 0;
     
-    // Reset observables
     this.callState$.next(CallState.DISCONNECTED);
     this.isConnected$.next(false);
     this.participants$.next([]);
