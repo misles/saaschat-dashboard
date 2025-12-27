@@ -2611,16 +2611,19 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       ).catch(error => {
         console.error('Failed to load call room component:', error);
         
-        // ✅ SIMPLE FALLBACK: Show error dialog instead of inline component
-        this.dialog.open(ErrorDialogComponent, {
-          width: '500px',
-          data: { 
-            title: 'Video Call Error',
-            message: 'Failed to load video call interface. Please try again.',
-            error: error.message 
-          }
+        this.dialog.open(GenericDialogComponent, {
+          data: { message: errorMessage, title: 'Error' }
         });
-      });
+        // ✅ SIMPLE FALLBACK: Show error dialog instead of inline component
+      //  this.dialog.open(ErrorDialogComponent, {
+      //    width: '500px',
+       //   data: { 
+       //     title: 'Video Call Error',
+       //     message: 'Failed to load video call interface. Please try again.',
+       //     error: error.message 
+       //   }
+       // });
+      //});
     }
 
 
