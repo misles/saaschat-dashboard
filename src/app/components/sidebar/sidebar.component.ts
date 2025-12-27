@@ -2611,9 +2611,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       ).catch(error => {
         console.error('Failed to load call room component:', error);
         
-        this.dialog.open(GenericDialogComponent, {
-          data: { message: errorMessage, title: 'Error' }
-        });
+       
         // ✅ SIMPLE FALLBACK: Show error dialog instead of inline component
       //  this.dialog.open(ErrorDialogComponent, {
       //    width: '500px',
