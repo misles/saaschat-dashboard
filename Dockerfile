@@ -1,22 +1,18 @@
 ### STAGE 1: Build ###
 FROM node:18.20.8-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy only dependency files first
+# 1. Copy package files first (cache layer)
 COPY package.json package-lock.json ./
 
-# DEBUG: Verify files exist before npm ci
-RUN ls -la && echo "Files in /app:" && find . -name "*.json"
+# 2. Install dependencies safely
+RUN npm ci --legacy-peer-deps --ignore-scripts --no-audit
 
-# Install deps (ignore peer conflicts)
-RUN npm ci --legacy-peer-deps
-
-# Copy full source
+# 3. Copy the rest of your source code
 COPY . .
 
-# Build using local Angular CLI
+# 4. Build the Angular application
 RUN node --max_old_space_size=4096 \
   ./node_modules/.bin/ng build \
   --configuration production \
