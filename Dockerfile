@@ -1,35 +1,39 @@
 ### STAGE 1: Build ###
-FROM node:18-alpine AS builder
 
-WORKDIR /app
+# We label our stage as ‘builder’
+FROM node:14-alpine as builder
 
-# Copy package files
 COPY package.json package-lock.json ./
 
-# ✅ FIXED: Use npm install instead of npm ci for --legacy-peer-deps
-RUN npm install --legacy-peer-deps
+## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
 
-# Copy source code
+RUN npm ci && mkdir /ng-app && mv ./node_modules ./ng-app
+
+WORKDIR /ng-app
+
 COPY . .
 
-# Build Angular app
+## Build the angular app in production mode and store the artifacts in dist folder
+
+#RUN npm run ng build -- --output-path=dist --base-href ./
+
+# with prod option
+#RUN npm run ng build -- --prod --output-path=dist --base-href ./
+# RUN node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng --configuration production --output-path=dist --base-href ./
 RUN npm run ng build -- --configuration production --output-path=dist --base-href ./
 
 ### STAGE 2: Setup ###
-FROM nginx:1.24-alpine
 
-# Install envsubst for config templating
-RUN apk add --no-cache gettext
+FROM nginx:1.14.1-alpine
 
-# Copy nginx config
+## Copy our default nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Clear default nginx content
+## Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
 
-# ✅ IMPORTANT: Check your actual dist folder structure
-# Angular creates dist/your-app-name/ not just dist/
-COPY --from=builder /app/dist/saaschat-dashboard /usr/share/nginx/html
+## From ‘builder’ stage copy over the artifacts in dist folder to default nginx public folder
+COPY --from=builder /ng-app/dist /usr/share/nginx/html
 
-# Startup command
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
+##CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh",  "-c",  "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
