@@ -4,7 +4,7 @@ FROM node:18.20.8-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy only dependency files first
+# Copy only dependency files first (cache-friendly)
 COPY package.json package-lock.json ./
 
 # DEBUG: Verify files exist before npm ci
