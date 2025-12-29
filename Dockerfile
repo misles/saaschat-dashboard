@@ -1,31 +1,36 @@
 ### STAGE 1: Build ###
 FROM node:18.20.8-alpine AS builder
 
-WORKDIR /ng-app
+WORKDIR /app
 
-# copy only deps first
+# Copy only dependency files first
 COPY package.json package-lock.json ./
 
-# install deps (tolerate peer conflicts)
+# Install deps (ignore peer conflicts)
 RUN npm ci --legacy-peer-deps
 
-# copy rest of source
+# Verify Angular CLI is present
+RUN ls node_modules/@angular/cli/bin/ng 2>/dev/null || (echo "WARNING: Angular CLI not found in node_modules" && false)
+
+# Copy source
 COPY . .
 
-# build using local angular cli
+# Build using local Angular CLI + memory
 RUN node --max_old_space_size=4096 \
   ./node_modules/@angular/cli/bin/ng build \
   --configuration production \
   --output-path=dist \
   --base-href ./
 
-### STAGE 2: Nginx ###
-FROM nginx:1.14.1-alpine
+### STAGE 2: Runtime ###
+FROM nginx:1.24-alpine
 
 COPY nginx.conf /etc/nginx/nginx.conf
-
 RUN rm -rf /usr/share/nginx/html/*
 
-COPY --from=builder /ng-app/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", \
+  "envsubst < /usr/share/nginx/html/dashboard-config-template.json > \
+   /usr/share/nginx/html/dashboard-config.json && \
+   exec nginx -g 'daemon off;'"]
