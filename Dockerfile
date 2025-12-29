@@ -29,7 +29,7 @@ RUN rm -rf /usr/share/nginx/html/*
 
 # ✅ IMPORTANT: Check your actual dist folder structure
 # Angular creates dist/your-app-name/ not just dist/
-COPY --from=builder /app/dist/tiledesk-dashboard /usr/share/nginx/html
+COPY --from=builder /app/dist/saaschat-dashboard /usr/share/nginx/html
 
 # Startup command
 CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
