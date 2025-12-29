@@ -17,7 +17,7 @@ COPY . .
 
 # Build using local Angular CLI + memory
 RUN node --max_old_space_size=4096 \
-  node_modules/@angular/cli/bin/ng build \
+  ./node_modules/@angular/cli/bin/ng build \
   --configuration production \
   --output-path=dist \
   --base-href ./
