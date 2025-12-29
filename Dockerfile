@@ -1,43 +1,31 @@
 ### STAGE 1: Build ###
-
-# We label our stage as ‘builder’
-FROM node:18.20.8-alpine as builder
-
-COPY package.json package-lock.json ./
-
-## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
-
-RUN npm ci --legacy-peer-deps && mkdir /ng-app && mv ./node_modules ./ng-app
+FROM node:18.20.8-alpine AS builder
 
 WORKDIR /ng-app
 
+# copy only deps first
+COPY package.json package-lock.json ./
+
+# install deps (tolerate peer conflicts)
+RUN npm ci --legacy-peer-deps
+
+# copy rest of source
 COPY . .
 
-## Build the angular app in production mode and store the artifacts in dist folder
-
-#RUN npm run ng build -- --output-path=dist --base-href ./
-
-# with prod option
-#RUN npm run ng build -- --prod --output-path=dist --base-href ./
-# RUN node --max_old_space_size=8192 node_modules/@angular/cli/bin/ng --configuration production --output-path=dist --base-href ./
+# build using local angular cli
 RUN node --max_old_space_size=4096 \
-  node_modules/@angular/cli/bin/ng build \
+  ./node_modules/@angular/cli/bin/ng build \
   --configuration production \
   --output-path=dist \
   --base-href ./
 
-### STAGE 2: Setup ###
-
+### STAGE 2: Nginx ###
 FROM nginx:1.14.1-alpine
 
-## Copy our default nginx config
 COPY nginx.conf /etc/nginx/nginx.conf
 
-## Remove default nginx website
 RUN rm -rf /usr/share/nginx/html/*
 
-## From ‘builder’ stage copy over the artifacts in dist folder to default nginx public folder
 COPY --from=builder /ng-app/dist /usr/share/nginx/html
 
-##CMD ["nginx", "-g", "daemon off;"]
-CMD ["/bin/sh",  "-c",  "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
+CMD ["/bin/sh", "-c", "envsubst < /usr/share/nginx/html/dashboard-config-template.json > /usr/share/nginx/html/dashboard-config.json && exec nginx -g 'daemon off;'"]
