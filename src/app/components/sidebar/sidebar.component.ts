@@ -139,7 +139,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   SIDEBAR_IS_SMALL: boolean = true;
   projectUser_id: string;
 
-  //project: Project;
+  project: Project;
   projectId: string;
   user: any;
 
@@ -297,7 +297,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     public location: Location,
     private route: ActivatedRoute,
     private projectService: ProjectService,
-    //private auth: AuthService,
+    private auth: AuthService,
     private usersService: UsersService,
     private notify: NotifyService,
     private uploadImageService: UploadImageService,
@@ -309,7 +309,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     public wsRequestsService: WsRequestsService,
     private logger: LoggerService,
     private sanitizer: DomSanitizer,
-    private faqKbService: FaqKbService,    
+    private faqKbService: FaqKbService,
     public dialog: MatDialog,
     private prjctPlanService: ProjectPlanService,
     private shepherdService: ShepherdService,
@@ -2158,7 +2158,15 @@ export class SidebarComponent implements OnInit, AfterViewInit {
     }
   }
 
-
+  // USED FOR SIDEBAR IN MOBILE MODE (TOGGLE THE CARET OF THE 'NAME OF THE CURRENT USER' DROPDOWN-MENU)
+  has_cliked_hidden_profile(SHOW_PROFILE_SUB) {
+    this.logger.log('[SIDEBAR] HAS CLICKED NAME OF THE CURRENT USER ON MOBILE - SHOW SUBMENU ', this.SHOW_PRJCT_SUB);
+    if (this.SHOW_PROFILE_SUB === true) {
+      this.transform_user_profile_caret = 'rotate(180deg)';
+    } else {
+      this.transform_user_profile_caret = 'none';
+    }
+  }
 
   openLogoutModal() {
     this.logger.log('[SIDEBAR] - calling openLogoutModal - PROJRCT ID ', this.projectId);
@@ -2418,55 +2426,52 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   //     this.router.navigate(['project/' + this.projectId + '/activities']);
   // }
 
-
-  // ============================================
+ // ============================================
   // LIVEKIT VIDEO CALL METHODS
   // ============================================
 
-    
   /**
-   * Check if video calls are allowed
-   */
-  async checkVideoCallPermissions(): Promise<void> {
-    if (!this.project || !this.project._id) {
-      this.showVideoCalls = false;
-      return;
-    }
-
-    if (!this.auth || !this.auth.user_id) {
-      this.showVideoCalls = false;
-      return;
-    }
-
-    this.isCheckingCallPermissions = true;
-
-    try {
-      // Check with backend if video calls are enabled
-      const response = await this.livekitService.canMakeCall(
-        this.project._id,
-        'video'
-      );
-      
-      this.showVideoCalls = response.allowed;
-      
-      console.log('Video call permissions:', response);
-    } catch (error) {
-      console.error('Error checking video call permissions:', error);
-      this.showVideoCalls = false;
-      
-      // Fallback: check project settings directly
-      try {
-        const usage = await this.livekitService.getCallUsage(this.project._id);
-        this.showVideoCalls = usage?.video_calls ?? false;
-      } catch (fallbackError) {
+     * Check if video calls are allowed
+     */
+    async checkVideoCallPermissions(): Promise<void> {
+      if (!this.project || !this.project._id) {
         this.showVideoCalls = false;
+        return;
       }
-    } finally {
-      this.isCheckingCallPermissions = false;
-    }
-  }
 
-    /**
+      if (!this.auth || !this.auth.user_id) {
+        this.showVideoCalls = false;
+        return;
+      }
+
+      this.isCheckingCallPermissions = true;
+
+      try {
+        // Check with backend if video calls are enabled
+        const response = await this.livekitService.canMakeCall(
+          this.project._id,
+          'video'
+        );
+        
+        this.showVideoCalls = response.allowed;
+        
+        console.log('Video call permissions:', response);
+      } catch (error) {
+        console.error('Error checking video call permissions:', error);
+        this.showVideoCalls = false;
+        
+        // Fallback: check project settings directly
+        try {
+          const usage = await this.livekitService.getCallUsage(this.project._id);
+          this.showVideoCalls = usage?.video_calls ?? false;
+        } catch (fallbackError) {
+          this.showVideoCalls = false;
+        }
+      } finally {
+        this.isCheckingCallPermissions = false;
+      }
+    }
+  /**
      * Handle video call button click
      */
     async startVideoCall(): Promise<void> {
@@ -2577,6 +2582,6 @@ export class SidebarComponent implements OnInit, AfterViewInit {
           data: { tokenData, project: this.project }
         });
       });
-    }
+    }  // ← This closes the openCallRoomDialog method
 
 }
