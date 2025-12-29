@@ -1,12 +1,16 @@
 ### STAGE 1: Build ###
 FROM node:18.20.8-alpine AS builder
 
+# Set working directory
 WORKDIR /app
 
 # Copy only dependency files first (cache-friendly)
 COPY package.json package-lock.json ./
 
-# Install deps (ignore peer conflicts – needed for Angular 14)
+# DEBUG: Verify files exist before npm ci
+RUN ls -la && echo "Files in /app:" && find . -name "*.json"
+
+# Install deps (ignore peer conflicts)
 RUN npm ci --legacy-peer-deps
 
 # Copy full source
