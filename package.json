@@ -1,10 +1,6 @@
 {
   "name": "@tiledesk/tiledesk-dashboard",
-  "version": "2.7.146",
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=8.0.0"
-  },
+  "version": "2.7.147",
   "scripts": {
     "ng": "ng",
     "start": "ng serve --aot",
@@ -69,7 +65,7 @@
     "jquery": "^3.5.0",
     "leaflet": "^1.7.1",
     "libphonenumber-js": "^1.12.10",
-    "livekit-client": "^1.13.0",
+    "livekit-client": "1.13.0",
     "marked": "^2.1.3",
     "material-icons": "^1.11.2",
     "moment": "^2.29.4",
@@ -87,7 +83,7 @@
     "perfect-scrollbar": "1.1.0",
     "roboto-fontface": "^0.10.0",
     "rxjs": "^6.5.4",
-    "sass": "^1.58.0",
+    "sass": "^1.54.9",
     "scrollto-with-animation": "^3.0.4",
     "sweetalert": "^2.1.2",
     "sweetalert2": "^11.10.6",
@@ -113,10 +109,9 @@
     "karma": "^6.4.1",
     "karma-chrome-launcher": "~2.2.0",
     "karma-cli": "~1.0.1",
-    "karma-coverage": "^2.2.1",
     "karma-jasmine": "^5.1.0",
     "karma-jasmine-html-reporter": "^2.0.0",
-    "protractor": "^7.0.0",
+    "protractor": "^5.4.4",
     "ts-node": "~7.0.0",
     "tslint": "^6.1.3",
     "typescript": "4.8.4"

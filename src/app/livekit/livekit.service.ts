@@ -16,7 +16,8 @@ import {
   RoomEvent,
   DisconnectReason,
   createLocalVideoTrack,  // ✅ Factory function
-  createLocalAudioTrack   // ✅ Factory function
+  createLocalAudioTrack,   // ✅ Factory function
+  createLocalTracks        // ✅ Added for better track management
 } from 'livekit-client';
 
 import { 
@@ -337,73 +338,79 @@ export class LivekitService implements OnDestroy {
     if (!this.room) return;
 
     this.cleanupLocalTracks();
-    const tracks: LocalTrack[] = [];
-
+    
     try {
-      if (enableVideo || enableAudio) {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const hasCamera = devices.some(d => d.kind === 'videoinput');
-        const hasMicrophone = devices.some(d => d.kind === 'audioinput');
-
-        if (enableVideo && hasCamera) {
-          try {
-            // ✅ CONSISTENT: Direct factory function usage
-            const videoTrack = await createLocalVideoTrack({
-              resolution: VideoPresets.h720.resolution,
-              facingMode: 'user'
-            });
-            
-            if (videoTrack) {
-              tracks.push(videoTrack);
-              await this.room.localParticipant.publishTrack(videoTrack);
-              this.localVideoEnabled$.next(true);
-            }
-          } catch (error) {
-            console.warn('Failed to create video track:', error);
-            this.localVideoEnabled$.next(false);
-          }
-        }
-
-        if (enableAudio && hasMicrophone) {
-          try {
-            // ✅ CONSISTENT: Direct factory function usage
-            const audioTrack = await createLocalAudioTrack();
-            if (audioTrack) {
-              tracks.push(audioTrack);
-              await this.room.localParticipant.publishTrack(audioTrack);
-              this.localAudioEnabled$.next(true);
-            }
-          } catch (error) {
-            console.warn('Failed to create audio track:', error);
-            this.localAudioEnabled$.next(false);
-          }
-        }
-
-        this.localTracks = tracks;
+      const constraints: any = {};
+      
+      if (enableVideo) {
+        constraints.video = {
+          resolution: VideoPresets.h720.resolution,
+          facingMode: 'user'
+        };
       }
-    } catch (error) {
+      
+      if (enableAudio) {
+        constraints.audio = true;
+      }
+      
+      // ✅ FIXED: Use createLocalTracks for better compatibility
+      if (enableVideo || enableAudio) {
+        const tracks = await createLocalTracks(constraints);
+        
+        for (const track of tracks) {
+          await this.room.localParticipant.publishTrack(track);
+          this.localTracks.push(track);
+          
+          if (track.kind === Track.Kind.Video) {
+            this.localVideoEnabled$.next(true);
+          } else if (track.kind === Track.Kind.Audio) {
+            this.localAudioEnabled$.next(true);
+          }
+        }
+      }
+    } catch (error: any) {
       console.error('Failed to setup local media:', error);
-      throw error;
+      
+      // Handle specific permission errors
+      if (error.name === 'NotAllowedError') {
+        throw new Error('Microphone/camera permission denied');
+      } else if (error.name === 'NotFoundError') {
+        throw new Error('No microphone/camera found');
+      } else {
+        throw error;
+      }
     }
   }
 
   private cleanupLocalTracks(): void {
-    // ✅ FIXED: Correct unpublish order - unpublish FIRST, then stop
+    // ✅ FIXED: Cleanup in correct order
     this.localTracks.forEach(track => {
-      this.room?.localParticipant.unpublishTrack(track);  // ✅ Unpublish first
-      track.stop();  // ✅ Stop after unpublishing
+      try {
+        // Unpublish from room
+        this.room?.localParticipant.unpublishTrack(track);
+        // Stop the track
+        track.stop();
+      } catch (error) {
+        console.warn('Error cleaning up track:', error);
+      }
     });
     
+    this.localTracks = [];
+    
+    // Cleanup screen track
     if (this.screenTrack) {
-      this.room?.localParticipant.unpublishTrack(this.screenTrack);  // ✅ Unpublish first
-      this.screenTrack.stop();  // ✅ Stop after unpublishing
+      try {
+        this.room?.localParticipant.unpublishTrack(this.screenTrack);
+        this.screenTrack.stop();
+      } catch (error) {
+        console.warn('Error cleaning up screen track:', error);
+      }
+      this.screenTrack = null;
+      this.isScreenSharing$.next(false);
     }
     
-    this.localTracks = [];
-    this.screenTrack = null;
     this.localVideoEnabled$.next(false);
     this.localAudioEnabled$.next(false);
-    this.isScreenSharing$.next(false);
   }
 
   private updateParticipantTracks(): void {
@@ -504,7 +511,8 @@ export class LivekitService implements OnDestroy {
 
     try {
       if (this.localVideoEnabled$.value) {
-        const videoTrack = this.localTracks.find(t => t.kind === Track.Kind.Video) as LocalVideoTrack;
+        // Turn video off
+        const videoTrack = this.localTracks.find(t => t.kind === Track.Kind.Video);
         if (videoTrack) {
           await this.room.localParticipant.unpublishTrack(videoTrack);
           videoTrack.stop();
@@ -512,18 +520,16 @@ export class LivekitService implements OnDestroy {
         }
         this.localVideoEnabled$.next(false);
       } else {
-        // ✅ CONSISTENT: Direct factory function usage
+        // Turn video on
         const videoTrack = await createLocalVideoTrack({
           resolution: VideoPresets.h720.resolution
         });
         
-        if (videoTrack) {
-          await this.room.localParticipant.publishTrack(videoTrack);
-          this.localTracks.push(videoTrack);
-          this.localVideoEnabled$.next(true);
-        }
+        await this.room.localParticipant.publishTrack(videoTrack);
+        this.localTracks.push(videoTrack);
+        this.localVideoEnabled$.next(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle video:', error);
       throw error;
     }
@@ -534,7 +540,8 @@ export class LivekitService implements OnDestroy {
 
     try {
       if (this.localAudioEnabled$.value) {
-        const audioTrack = this.localTracks.find(t => t.kind === Track.Kind.Audio) as LocalAudioTrack;
+        // Turn audio off
+        const audioTrack = this.localTracks.find(t => t.kind === Track.Kind.Audio);
         if (audioTrack) {
           await this.room.localParticipant.unpublishTrack(audioTrack);
           audioTrack.stop();
@@ -542,15 +549,13 @@ export class LivekitService implements OnDestroy {
         }
         this.localAudioEnabled$.next(false);
       } else {
-        // ✅ CONSISTENT: Direct factory function usage
+        // Turn audio on
         const audioTrack = await createLocalAudioTrack();
-        if (audioTrack) {
-          await this.room.localParticipant.publishTrack(audioTrack);
-          this.localTracks.push(audioTrack);
-          this.localAudioEnabled$.next(true);
-        }
+        await this.room.localParticipant.publishTrack(audioTrack);
+        this.localTracks.push(audioTrack);
+        this.localAudioEnabled$.next(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to toggle audio:', error);
       throw error;
     }
@@ -560,6 +565,7 @@ export class LivekitService implements OnDestroy {
     if (!this.room) return;
 
     try {
+      // If already sharing, stop first
       if (this.screenTrack) {
         await this.stopScreenShare();
       }
@@ -582,21 +588,25 @@ export class LivekitService implements OnDestroy {
         throw new Error('No video track found in screen share');
       }
       
-      this.screenTrack = new LocalVideoTrack(screenVideoTrack);  // ✅
-      // Source will be set in publishTrack()
-      await this.room.localParticipant.publishTrack(this.screenTrack, {
-        source: Track.Source.ScreenShare  // ✅ Source goes here
-      });
-
+      // ✅ FIXED: Create screen track properly
+      this.screenTrack = new LocalVideoTrack(screenVideoTrack);
+      
+      // ✅ FIXED: Removed duplicate publishTrack call
       await this.room.localParticipant.publishTrack(this.screenTrack, {
         source: Track.Source.ScreenShare
       });
       
       this.isScreenSharing$.next(true);
       
+      // Handle when user stops screen sharing via browser UI
       screenVideoTrack.onended = () => {
         this.stopScreenShare();
       };
+      
+      // Also listen for track stopping
+      this.screenTrack.on(LocalVideoTrack.Event.Ended, () => {
+        this.stopScreenShare();
+      });
       
     } catch (error: any) {
       console.error('Failed to start screen share:', error);
@@ -617,13 +627,6 @@ export class LivekitService implements OnDestroy {
     try {
       await this.room.localParticipant.unpublishTrack(this.screenTrack);
       this.screenTrack.stop();
-      
-      // ✅ OPTIONAL: Clean up the underlying mediaStreamTrack
-      const mediaTrack = this.screenTrack.mediaStreamTrack;
-      if (mediaTrack) {
-        mediaTrack.stop();
-      }
-      
       this.screenTrack = null;
       this.isScreenSharing$.next(false);
     } catch (error) {
