@@ -1,13 +1,15 @@
 ### STAGE 1: Build ###
 
 # We label our stage as ‘builder’
-FROM node:14-alpine as builder
+FROM node:18.20.8-alpine AS builder
 
 COPY package.json package-lock.json ./
 
 ## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
 
-RUN npm ci && mkdir /ng-app && mv ./node_modules ./ng-app
+RUN npm ci --legacy-peer-deps \
+ && mkdir /ng-app \
+ && mv ./node_modules ./ng-app
 
 WORKDIR /ng-app
 
@@ -24,7 +26,7 @@ RUN npm run ng build -- --configuration production --output-path=dist --base-hre
 
 ### STAGE 2: Setup ###
 
-FROM nginx:1.14.1-alpine
+FROM nginx:1.25-alpine
 
 ## Copy our default nginx config
 COPY nginx.conf /etc/nginx/nginx.conf

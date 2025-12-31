@@ -102,7 +102,7 @@
     "@types/chartist": "0.9.34",
     "@types/jasmine": "2.8.2",
     "@types/jquery": "1.10.31",
-    "@types/node": "^8.10.66",
+    "@types/node": "^16.18.0",
     "jasmine-core": "^4.4.0",
     "jasmine-spec-reporter": "~4.2.1",
     "karma": "^6.4.1",
