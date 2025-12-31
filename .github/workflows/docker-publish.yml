@@ -2,7 +2,7 @@ name: Publish Dashboard to Docker Hub
 
 on:
   push:
-    branches: [ "master" ]   # ← changed from "main" to "master"
+    branches: [ "master" ]
 
 jobs:
   push:
@@ -22,3 +22,8 @@ jobs:
           context: .
           push: true
           tags: abrarsaquib/saaschat-dashboard:latest
+          # ADD THESE CACHE-BUSTING ARGUMENTS:
+          build-args: |
+            NODE_ENV=production
+            # This will bust the cache on every build:
+            CACHE_BUST=${{ github.run_id }}${{ github.run_attempt }}
