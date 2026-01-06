@@ -146,7 +146,7 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   // CHAT_BASE_URL = environment.chat.CHAT_BASE_URL; // moved
   // CHAT_BASE_URL = environment.CHAT_BASE_URL; // now get from appconfig
   CHAT_BASE_URL: string;
-
+  LIVEKIT_DASHBOARD_URL: string = 'http://31.220.74.214:4503'; // livekit added
   userProfileImageExist: boolean;
   userImageHasBeenUploaded: boolean;
   userProfileImageurl: string;
@@ -2077,6 +2077,19 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       this.router.navigate(['project/' + this.project._id + '/knowledge-bases/0']);
     }
 
+  }
+// livekit adding hear
+  openLiveKitDashboard() {
+    const clickTime = performance.now();
+    this.logger.log('[SIDEBAR] Clicked LiveKit Dashboard at:', clickTime);
+    
+    // Open in new tab
+    window.open(this.LIVEKIT_DASHBOARD_URL, '_blank', 'noopener,noreferrer');
+    
+    const afterNav = performance.now();
+    const durationMs = afterNav - clickTime;
+    const durationSec = durationMs / 1000;
+    this.logger.log(`[SIDEBAR] LiveKit Dashboard opened in ${durationMs.toFixed(2)} ms (${durationSec.toFixed(2)} seconds)`);
   }
 
   goToWidgetSetUpOrToCannedResponses() {

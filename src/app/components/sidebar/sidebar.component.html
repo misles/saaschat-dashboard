@@ -228,9 +228,32 @@
     </ng-container>
 
 
-
-
-
+    <!-- ------------------------------------------- -->
+    <!-- LiveKit Dashboard -->
+    <!-- ------------------------------------------- -->
+    <div id="livekit-dashboard" 
+      *ngIf="project && USER_ROLE !== 'agent'" 
+      matTooltipClass="sb-mat-tooltip"
+      matTooltip="Calling" 
+      #tooltip="matTooltip" 
+      matTooltipPosition='right'
+      matTooltipHideDelay="100">
+      <a class="customAncor" (click)="openLiveKitDashboard()">
+        <span>
+          <!-- LiveKit Icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="24" height="24">
+            <rect x="3" y="5" width="12" height="14" rx="2"
+                  stroke="currentColor" stroke-width="2"/>
+            <path d="M18 8c1.5 1.5 1.5 6.5 0 8"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round"/>
+            <path d="M21 6c3 3 3 9 0 12"
+                  stroke="currentColor" stroke-width="2"
+                  stroke-linecap="round"/>
+          </svg>
+        </span>
+      </a>
+    </div>
 
 
     <!-- ------------------------------------------- -->
@@ -247,10 +270,12 @@
 
           <span>
             <!-- height="20px" width="20px" -->
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="none">
-              <path
-                d="M480-80 360-642l-88 402H80v-80h128l113-520h79l122 572 78-332h80l72 280h128v80H690l-48-188-82 348h-80Z" />
-            </svg>
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" width="24" height="24">
+                <path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zm0 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2zm0 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2z" 
+                      fill="currentColor"/>
+              </svg>
+            </span>
           </span>
         </a>
       </div>

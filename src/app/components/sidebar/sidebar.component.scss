@@ -83,6 +83,25 @@
  fill:  var(--sidebar-hover-icon-color);
 }
 
+/* LiveKit Dashboard icon */
+#livekit-dashboard {
+  a {
+    span {
+      svg {
+        path {
+          fill: var(--sidebar-icon-color);
+        }
+      }
+    }
+  }
+  
+  &:hover {
+    a span svg path {
+      fill: var(--sidebar-hover-icon-color);
+    }
+  }
+}
+
 .nav-custom > div > #openchat-a {
   position: relative;
 }
