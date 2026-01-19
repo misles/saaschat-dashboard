@@ -2083,24 +2083,21 @@ export class SidebarComponent implements OnInit, AfterViewInit {
       const clickTime = performance.now();
       this.logger.log('[SIDEBAR] Clicked LiveKit Dashboard at:', clickTime);
       
-      // ✅ STEP 1: GET THE PROJECT ID (Critical for SaaS)
-      // The `this.project` object is already available in your component (line 111).
+      // 1. Get project ID
       const projectId = this.project._id;
       
       if (!projectId) {
           this.logger.error('[SIDEBAR] Cannot open LiveKit: No project ID found.');
-          // Optionally show a user error message here
           return;
       }
       
-      // ✅ STEP 2: CONSTRUCT THE CORRECT URL
-      // Append the projectId as a query parameter to match your LiveKit route.
-      const livekitUrlWithContext = `${this.LIVEKIT_DASHBOARD_URL}/#/dashboard?projectId=${projectId}`;
+      // 2. Construct complete URL
+      const livekitUrl = `${this.LIVEKIT_DASHBOARD_URL}/#/dashboard?projectId=${projectId}`;
       
-      this.logger.log(`[SIDEBAR] Opening LiveKit for project: ${projectId}`, livekitUrlWithContext);
+      this.logger.log(`[SIDEBAR] Opening LiveKit for project: ${projectId}`, livekitUrl);
       
-      // ✅ STEP 3: OPEN THE CONTEXT-AWARE URL
-      window.location.href = livekitUrlWithContext;
+      // 3. Navigate in same tab
+      window.location.href = livekitUrl;
       
       const afterNav = performance.now();
       const durationMs = afterNav - clickTime;
