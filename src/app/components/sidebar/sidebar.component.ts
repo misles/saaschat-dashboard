@@ -2080,16 +2080,32 @@ export class SidebarComponent implements OnInit, AfterViewInit {
   }
 // livekit adding hear
   openLiveKitDashboard() {
-    const clickTime = performance.now();
-    this.logger.log('[SIDEBAR] Clicked LiveKit Dashboard at:', clickTime);
-    
-    // Open in new tab
-    window.open(this.LIVEKIT_DASHBOARD_URL, '_blank', 'noopener,noreferrer');
-    
-    const afterNav = performance.now();
-    const durationMs = afterNav - clickTime;
-    const durationSec = durationMs / 1000;
-    this.logger.log(`[SIDEBAR] LiveKit Dashboard opened in ${durationMs.toFixed(2)} ms (${durationSec.toFixed(2)} seconds)`);
+      const clickTime = performance.now();
+      this.logger.log('[SIDEBAR] Clicked LiveKit Dashboard at:', clickTime);
+      
+      // ✅ STEP 1: GET THE PROJECT ID (Critical for SaaS)
+      // The `this.project` object is already available in your component (line 111).
+      const projectId = this.project._id;
+      
+      if (!projectId) {
+          this.logger.error('[SIDEBAR] Cannot open LiveKit: No project ID found.');
+          // Optionally show a user error message here
+          return;
+      }
+      
+      // ✅ STEP 2: CONSTRUCT THE CORRECT URL
+      // Append the projectId as a query parameter to match your LiveKit route.
+      const livekitUrlWithContext = `${this.LIVEKIT_DASHBOARD_URL}/#/dashboard?projectId=${projectId}`;
+      
+      this.logger.log(`[SIDEBAR] Opening LiveKit for project: ${projectId}`, livekitUrlWithContext);
+      
+      // ✅ STEP 3: OPEN THE CONTEXT-AWARE URL
+      window.location.href = livekitUrlWithContext;
+      
+      const afterNav = performance.now();
+      const durationMs = afterNav - clickTime;
+      const durationSec = durationMs / 1000;
+      this.logger.log(`[SIDEBAR] LiveKit Dashboard opened in ${durationMs.toFixed(2)} ms (${durationSec.toFixed(2)} seconds)`);
   }
 
   goToWidgetSetUpOrToCannedResponses() {
